@@ -1,0 +1,2922 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Flappy Bird — Maps & Enhanced Background Effects & Online Leaderboard</title>
+    <style>
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(180deg,#62d7ff 0%,#bdefff 62%,#e0f9ff 100%);
+            font-family: Arial,sans-serif;
+            color: #203653;
+            user-select: none
+        }
+
+        .game-version {
+            display: inline-block;
+            margin: 2px 0 6px;
+            padding: 3px 9px;
+            border: 1px solid rgba(255,255,255,.75);
+            border-radius: 999px;
+            background: rgba(255,255,255,.55);
+            color: #47708a;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .5px;
+        }
+
+        .game {
+            width: min(94vw,390px);
+            text-align: center
+        }
+
+        h1 {
+            margin: 8px 0;
+            color: #fff06b;
+            font-size: 28px;
+            text-shadow: 0 3px #278cc7,0 5px 12px #2476a8
+        }
+
+        .tag {
+            display: inline-block;
+            background: #ff4655;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 6px
+        }
+
+        .info {
+            display: flex;
+            justify-content: space-between;
+            margin: 6px 3px 8px;
+            font-weight: bold;
+            font-size: 15px
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%
+        }
+
+        canvas {
+            width: 100%;
+            display: block;
+            border: 4px solid white;
+            border-radius: 15px;
+            box-shadow: 0 0 25px #8b5cf6;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        #buffStatus {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.75);
+            color: #ffe66d;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 1.5px solid rgba(255,230,109,0.4);
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 10
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px
+        }
+
+            .btn-group button {
+                flex: 1;
+                margin-top: 0
+            }
+
+        button {
+            margin-top: 8px;
+            padding: 12px 20px;
+            border: 0;
+            border-radius: 12px;
+            background: #ffe66d;
+            color: #292044;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform .08s ease, box-shadow .08s ease;
+        }
+
+        button:not(:disabled):active {
+            transform: translateY(3px) scale(.985);
+        }
+
+        #start {
+            width: 100%
+        }
+
+        #skillBtn {
+            display: none;
+        }
+
+        #skillCooldown {
+            position: absolute;
+            top: 58px;
+            right: 8px;
+            width: 58px;
+            height: 58px;
+            box-sizing: border-box;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            pointer-events: none;
+            background: conic-gradient(#ffe66d var(--skill-progress, 100%), rgba(255,255,255,.20) 0);
+            box-shadow: 0 3px 10px rgba(0,0,0,.24);
+        }
+
+        #skillCooldown::after {
+            content: "";
+            position: absolute;
+            inset: 4px;
+            border-radius: 50%;
+            background: rgba(24,10,45,.92);
+            border: 1px solid rgba(255,255,255,.72);
+        }
+
+        #skillCooldownIcon {
+            position: relative;
+            z-index: 2;
+            font-size: 22px;
+            line-height: 1;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,.35));
+        }
+
+        #skillCooldownText {
+            position: absolute;
+            z-index: 3;
+            bottom: 7px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 9px;
+            line-height: 10px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 1px 2px #000;
+        }
+
+        .skill-cooldown-bar { display:none; }
+        #skillCooldownFill { display:none; }
+
+        #skillCooldown.gold-skill {
+            box-shadow: 0 0 8px rgba(255,220,80,.55), 0 3px 12px rgba(0,0,0,.25);
+        }
+
+        #pauseBtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 42px;
+            height: 42px;
+            margin: 0;
+            padding: 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(24, 10, 45, .82);
+            color: white;
+            border: 2px solid rgba(255,255,255,.75);
+            box-shadow: 0 4px 12px rgba(0,0,0,.28);
+            font-size: 20px;
+            line-height: 1;
+            z-index: 20;
+        }
+
+        #pauseBtn:not(:disabled):hover {
+            transform: scale(1.06);
+        }
+
+        #pauseBtn:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+        }
+
+        .tip {
+            font-size: 12px;
+            color: #555;
+            margin: 8px 0
+        }
+
+        #selectScreen {
+            width: min(94vw,380px);
+            padding: 10px 0 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px
+        }
+
+            #selectScreen h1 {
+                margin: 0
+            }
+
+        #menuMain { display:block; }
+
+        .menu-best {
+            color: #24425d;
+            font-weight: bold;
+            margin: 2px 0 4px;
+            font-size: 14px
+        }
+
+        .bird-select, .map-select {
+            padding: 10px;
+            border-radius: 16px;
+            background: rgba(255,255,255,.82);
+            color: #24425d;
+            box-shadow: 0 8px 24px rgba(36,100,140,.12)
+        }
+
+            .bird-select h2, .map-select h2 {
+                margin: 0 0 6px;
+                font-size: 14px
+            }
+
+        .bird-grid {
+            display: grid;
+            grid-template-columns: repeat(4,minmax(0,1fr));
+            gap: 6px
+        }
+
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(2,minmax(0,1fr));
+            gap: 6px
+        }
+
+        .bird-card, .map-card {
+            margin: 0;
+            padding: 5px 3px;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            background: rgba(255,255,255,.95);
+            color: #24425d;
+            font-size: 12px;
+            line-height: 1.2;
+            min-width: 0;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform .15s,border-color .15s
+        }
+
+            .bird-card:active, .map-card:active {
+                transform: scale(.97)
+            }
+
+            .bird-card.selected, .map-card.selected {
+                border-color: #1686c8;
+                background: #e4f7ff;
+                box-shadow: 0 0 0 2px rgba(22,134,200,.18)
+            }
+
+            .bird-card.locked {
+                opacity: .58;
+                cursor: not-allowed
+            }
+
+        .bird-preview {
+            display: block;
+            width: 56px;
+            height: 46px;
+            margin: 0 auto;
+            overflow: visible
+        }
+
+        .bird-card strong, .map-card strong {
+            display: block;
+            font-size: 10.5px;
+            margin-top: 2px
+        }
+
+        .bird-card small, .map-card small {
+            display: block;
+            font-size: 8.5px;
+            margin-top: 1px;
+            color: #557
+        }
+
+        .bird-card.rarity-common { background:linear-gradient(180deg,#fff,#f8fbfd); }
+        .bird-card.rarity-rare { background:linear-gradient(180deg,#eef7ff,#f8fbff); border-color:rgba(66,139,210,.20); }
+        .bird-card.rarity-epic { background:linear-gradient(180deg,#f6efff,#fff9ff); border-color:rgba(139,91,220,.22); }
+        .bird-card.rarity-legendary { background:linear-gradient(180deg,#fff8dc,#fffdf4); border-color:rgba(224,166,42,.28); }
+        .bird-card.rarity-rare.selected { border-color:#4b9de0; }
+        .bird-card.rarity-epic.selected { border-color:#9a65df; }
+        .bird-card.rarity-legendary.selected { border-color:#d9a62d; }
+        .bird-card .rarity-label { display:block; margin-top:1px; font-size:7px; font-weight:900; letter-spacing:.35px; text-transform:uppercase; color:#718797; }
+        .bird-card.rarity-rare .rarity-label { color:#3976aa; }
+        .bird-card.rarity-epic .rarity-label { color:#7650a9; }
+        .bird-card.rarity-legendary .rarity-label { color:#9b7415; }
+
+        .selection-note {
+            margin-top: 4px;
+            font-size: 11.5px;
+            min-height: 15px;
+            font-weight: bold;
+            color: #166088
+        }
+
+        #enterGame {
+            width: 100%;
+            margin-top: 2px;
+            padding: 12px 20px;
+            font-size: 17px;
+            box-shadow: 0 4px 0 #e6bd36
+        }
+
+
+        .menu-action-grid {
+            display:grid;
+            margin-top:8px;
+            grid-template-columns:repeat(2,minmax(0,1fr));
+            gap:8px;
+        }
+        .menu-action-grid button {
+            width:100%;
+            min-width:0;
+            margin:0;
+            padding:10px 8px;
+            font-size:13px;
+            line-height:1.15;
+        }
+        #fashionOpenBtn { background:linear-gradient(135deg,#f7b2ff,#ffe66d); color:#39204f; box-shadow:0 4px 0 #d79bdc; }
+        #leaderboardOpenBtn { background:linear-gradient(135deg,#9edcff,#ffffff); color:#185d87; box-shadow:0 4px 0 #8bc5df; }
+        #profileOpenBtn { background:linear-gradient(135deg,#ffe66d,#fff7c9); color:#513f72; box-shadow:0 4px 0 #e2c957; }
+        #titleOpenBtn { background:linear-gradient(135deg,#fff3b0,#ffffff); color:#7a5b00; box-shadow:0 4px 0 #e4cf72; }
+        #titleScreen { display:none; width:100%; }
+        .title-panel { padding:12px; border-radius:18px; background:linear-gradient(135deg,#ffffff 0%,#f7fbff 48%,#fffdf5 100%); box-shadow:0 10px 28px rgba(36,100,140,.15); border:1px solid rgba(190,215,230,.8); }
+        .title-panel h2 { margin:0 0 6px; font-size:20px; color:#486b82; }
+        .title-subtitle { margin:0 0 10px; font-size:12px; color:#557; }
+        .title-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 10px; }
+        .title-actions button { width:100%; margin:0; min-height:38px; font-size:12px; }
+        .title-back { background:#e9f4fa; color:#24425d; }
+        .title-clear { background:linear-gradient(135deg,#fff5f5,#fff); color:#8a4a4a; border:1px solid #efd1d1; box-shadow:0 3px 0 #e8c4c4; }
+        .title-clear:active { box-shadow:0 1px 0 #e8c4c4; }
+        .title-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+        .title-card { position:relative; overflow:hidden; border:2px solid #dceaf2; border-radius:14px; padding:10px 7px; background:linear-gradient(135deg,#ffffff,#f4f9fc); cursor:pointer; min-height:92px; color:#30485b; }
+        .title-card::after { content:""; position:absolute; inset:-40% -70%; pointer-events:none; background:linear-gradient(105deg,transparent 42%,rgba(255,255,255,.72) 50%,transparent 58%); transform:translateX(-65%); animation:titleCardShine 4.8s ease-in-out infinite; opacity:.34; }
+        .title-card > * { position:relative; z-index:1; }
+        .title-card.selected { border-color:#9ed7e8; background:linear-gradient(135deg,#ffffff,#eaf8fb); box-shadow:0 0 0 2px rgba(126,205,226,.18); }
+        .title-card.locked { opacity:.58; cursor:default; background:#f5f7f8; }
+        .title-card.rank-title { min-height:98px; }
+        .title-card.rank-title strong { font-size:12px; letter-spacing:.1px; }
+        .title-card.rank-title small { font-weight:700; }
+        .title-card.rank-1 { border-color:#e6c85a; background:linear-gradient(135deg,#fffdf0 0%,#fff8cf 48%,#ffffff 100%); box-shadow:inset 0 0 18px rgba(232,194,65,.16),0 0 0 1px rgba(232,194,65,.10); }
+        .title-card.rank-2 { border-color:#b9c7d3; background:linear-gradient(135deg,#ffffff 0%,#eef4f8 52%,#ffffff 100%); box-shadow:inset 0 0 18px rgba(157,178,194,.14); }
+        .title-card.rank-3 { border-color:#dfab73; background:linear-gradient(135deg,#fffaf5 0%,#fff0df 52%,#ffffff 100%); box-shadow:inset 0 0 18px rgba(214,143,72,.13); }
+        .title-card.rank-1::before,.title-card.rank-2::before,.title-card.rank-3::before { content:""; position:absolute; left:10%; right:10%; top:5px; height:2px; border-radius:999px; opacity:.72; animation:rankGlow 2.6s ease-in-out infinite; }
+        .title-card.rank-1::before { background:#e4c24e; box-shadow:0 0 9px rgba(228,194,78,.58); }
+        .title-card.rank-2::before { background:#aebdca; box-shadow:0 0 8px rgba(140,164,181,.48); }
+        .title-card.rank-3::before { background:#d99a5c; box-shadow:0 0 8px rgba(211,141,76,.48); }
+        @keyframes titleCardShine { 0%,72% { transform:translateX(-65%); } 100% { transform:translateX(65%); } }
+        @keyframes rankGlow { 0%,100% { opacity:.42; } 50% { opacity:.95; } }
+        .title-card .big { display:block; font-size:28px; margin-bottom:4px; }
+        .title-card strong { display:block; font-size:12px; color:#30485b; }
+        .title-card small { display:block; margin-top:4px; font-size:10px; color:#718096; line-height:1.25; }
+        .title-note { margin:10px 0 0; padding:8px 10px; border-radius:12px; background:linear-gradient(135deg,#fffdf4,#f5fbff); color:#526b78; font-size:12px; border:1px solid #dfeef3; }
+        #leaderboardScreen { display:none; width:100%; }
+        .leaderboard-panel { padding:12px; border-radius:18px; background:rgba(255,255,255,.90); box-shadow:0 10px 28px rgba(36,100,140,.15); }
+        .leaderboard-panel h2 { margin:0 0 6px; font-size:20px; color:#1686c8; }
+        .leaderboard-subtitle { margin:0 0 10px; font-size:12px; color:#557; }
+        .leaderboard-panel .leaderboard-box { margin-top:0; max-height:none; }
+        .leaderboard-back { width:100%; margin-top:10px; background:#e9f4fa; color:#24425d; }
+
+        #profileScreen { display:none; width:100%; }
+        .profile-panel { padding:12px; border-radius:18px; background:linear-gradient(135deg,#ffffff 0%,#f7fbff 48%,#fffdf5 100%); box-shadow:0 10px 28px rgba(36,100,140,.15); border:1px solid rgba(190,215,230,.8); }
+        .profile-panel h2 { margin:0 0 5px; font-size:20px; color:#24425d; }
+        .profile-subtitle { margin:0 0 10px; font-size:12px; color:#557; }
+        .profile-back { width:100%; margin-top:10px; background:#e9f4fa; color:#24425d; }
+        .profile-card { padding:11px; border:1px solid #dceaf2; border-radius:14px; background:rgba(255,255,255,.92); margin-bottom:9px; }
+        .profile-head { display:flex; align-items:center; gap:10px; padding-bottom:9px; border-bottom:1px solid #e8f0f4; }
+        .profile-avatar { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:28px; background:linear-gradient(135deg,#fff7cf,#eaf8ff); border:1px solid #dce7ee; }
+        .profile-name { font-size:16px; font-weight:900; color:#24425d; }
+        .profile-rank { margin-top:2px; font-size:10px; font-weight:800; color:#1686c8; }
+        .profile-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; margin-top:9px; }
+        .profile-stat { padding:8px 7px; border-radius:11px; background:#f7fbfd; border:1px solid #e4eef3; text-align:center; }
+        .profile-stat b { display:block; font-size:16px; color:#24425d; }
+        .profile-stat small { display:block; margin-top:2px; color:#718096; font-size:9.5px; font-weight:800; }
+        .profile-section-title { margin:0 0 7px; font-size:13px; color:#1686c8; }
+        .map-record { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 9px; margin:5px 0; border:1px solid #e1edf3; border-radius:11px; background:#fff; }
+        .map-record-main { min-width:0; }
+        .map-record-name { display:block; font-size:11.5px; font-weight:900; color:#30485b; }
+        .map-record-meta { display:block; margin-top:2px; font-size:9.5px; color:#718096; }
+        .map-record-best { font-size:12px; font-weight:900; color:#1686c8; white-space:nowrap; }
+        .rank-history { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+        .rank-history div { padding:8px 5px; border-radius:10px; text-align:center; background:#fff; border:1px solid #e3edf2; }
+        .rank-history b { display:block; font-size:15px; }
+        .rank-history small { font-size:9px; color:#718096; font-weight:800; }
+
+        #fashionScreen { display:none; width:100%; }
+        .fashion-panel { padding:12px; border-radius:18px; background:rgba(255,255,255,.88); box-shadow:0 10px 28px rgba(36,100,140,.15); }
+        .fashion-title { margin:0 0 5px; font-size:20px; color:#24425d; }
+        .fashion-subtitle { margin:0 0 12px; font-size:12px; color:#557; }
+        .fashion-menu-grid,.fashion-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+        .fashion-category,.fashion-card { margin:0; padding:10px 6px; border:2px solid transparent; border-radius:14px; background:#fff; color:#24425d; cursor:pointer; font-weight:800; transition:transform .15s,border-color .15s,box-shadow .15s; }
+        .fashion-category:active,.fashion-card:active { transform:scale(.97); }
+        .fashion-category { min-height:90px; font-size:14px; }
+        .fashion-category .big { display:block; font-size:34px; margin-bottom:5px; }
+        .fashion-card.selected { border-color:#b14cff; background:#f8efff; box-shadow:0 0 0 2px rgba(177,76,255,.12); }
+        .fashion-card .preview { height:58px; display:flex; align-items:center; justify-content:center; font-size:34px; }
+        .fashion-card strong { display:block; font-size:12px; }
+        .fashion-card small { display:block; margin-top:2px; color:#667; font-size:10px; }
+        .fashion-back { width:100%; margin-top:10px; background:#e9f4fa; color:#24425d; }
+        .fashion-note { min-height:18px; margin:8px 0 0; font-size:11.5px; font-weight:700; color:#6c3b91; }
+
+        #gameScreen {
+            display: none
+        }
+
+        .help {
+            margin: 10px 0 16px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,.58);
+            color: #24425d;
+            text-align: left;
+            font-size: 12px;
+            line-height: 1.7
+        }
+
+        .leaderboard-box {
+            margin-top: 6px;
+            padding: 8px;
+            border-radius: 12px;
+            background: rgba(255,255,255,.92);
+            color: #24425d;
+            text-align: left;
+            max-height: 260px;
+            overflow-y: auto
+        }
+
+        .leaderboard-box h3 {
+            margin: 0 0 6px;
+            text-align: center;
+            font-size: 13px;
+            color: #1686c8
+        }
+
+        .lb-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            min-height: 40px;
+            margin: 4px 0;
+            padding: 6px 8px;
+            border: 1px solid #d9ebf3;
+            border-radius: 11px;
+            background: #ffffff;
+            font-size: 11.5px;
+            overflow: hidden;
+            overflow-wrap: anywhere;
+        }
+
+        .lb-item:last-child { border-bottom: 1px solid #d9ebf3; }
+
+        .lb-main {
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .lb-rank {
+            min-width: 25px;
+            font-weight: 900;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .lb-name-wrap { min-width: 0; display:flex; align-items:center; gap:6px; flex-wrap:nowrap; }
+        .lb-name {
+            display: inline-block;
+            color: #24425d;
+            font-weight: 900;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lb-player-title {
+            display: inline-block;
+            margin-top: 0;
+            padding: 2px 7px;
+            border-radius: 999px;
+            font-size: 8.5px;
+            line-height: 1.2;
+            font-weight: 900;
+            letter-spacing: .2px;
+            white-space: nowrap;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+            flex: 0 1 auto;
+            background: #f7fbfd;
+        }
+
+        .lb-title {
+            display: inline-block;
+            margin-top: 0;
+            padding: 2px 6px;
+            border-radius: 999px;
+            font-size: 8.5px;
+            line-height: 1.2;
+            font-weight: 900;
+            letter-spacing: .35px;
+            white-space: nowrap;
+        }
+
+        .lb-score {
+            flex: 0 0 auto;
+            font-weight: 900;
+            white-space: nowrap;
+            color: #185d87;
+        }
+
+        .lb-top1 {
+            min-height: 54px;
+            border-color: #e4c85a;
+            background: linear-gradient(135deg,#fffdf0 0%,#fff8c9 52%,#ffffff 100%);
+            box-shadow: inset 0 0 0 1px rgba(255,220,86,.22);
+        }
+        .lb-top1 .lb-rank { color: #a97700; font-size: 15px; }
+        .lb-top1 .lb-title { color:#7a5600; background:#fff0a8; border:1px solid #e8c95a; }
+        .lb-top1 .lb-score { color:#9a6b00; }
+
+        .lb-top2 {
+            min-height: 51px;
+            border-color: #b9c9d4;
+            background: linear-gradient(135deg,#f8fbfd 0%,#eaf1f5 52%,#ffffff 100%);
+        }
+        .lb-top2 .lb-rank { color: #607988; font-size: 14px; }
+        .lb-top2 .lb-title { color:#526b78; background:#e5eef3; border:1px solid #c5d5de; }
+        .lb-top2 .lb-score { color:#536f80; }
+
+        .lb-top3 {
+            min-height: 49px;
+            border-color: #e0b184;
+            background: linear-gradient(135deg,#fff9f4 0%,#ffe9d6 52%,#ffffff 100%);
+        }
+        .lb-top3 .lb-rank { color: #a76534; font-size: 13px; }
+        .lb-top3 .lb-title { color:#8a4f28; background:#ffe1c4; border:1px solid #e2b080; }
+        .lb-top3 .lb-score { color:#9a5a2d; }
+
+        .lb-top1::after, .lb-top2::after, .lb-top3::after {
+            content:"";
+            position:absolute;
+            inset:0;
+            pointer-events:none;
+            border-radius:inherit;
+            background: linear-gradient(105deg,transparent 20%,rgba(255,255,255,.7) 50%,transparent 80%);
+            background-size:220% 100%;
+            animation: lbShine 4.8s ease-in-out infinite;
+        }
+        .lb-top2::after { animation-delay: .8s; opacity:.7; }
+        .lb-top3::after { animation-delay: 1.5s; opacity:.62; }
+        .lb-top1 > *, .lb-top2 > *, .lb-top3 > * { position:relative; z-index:1; }
+
+        @keyframes lbShine {
+            0%,55%,100% { background-position: 220% 0; }
+            72% { background-position: -20% 0; }
+        }
+
+        .lb-message {
+            text-align: center;
+            font-size: 11.5px;
+            padding: 6px 0
+        }
+
+
+        #hellConfirmModal {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(18, 0, 30, .78);
+            backdrop-filter: blur(4px);
+        }
+
+        #hellConfirmModal .hell-modal-card {
+            width: min(100%, 350px);
+            padding: 24px 22px;
+            border-radius: 20px;
+            background: linear-gradient(180deg, #240036, #120018);
+            color: #fff;
+            text-align: center;
+            border: 2px solid #ff315f;
+            box-shadow: 0 0 35px rgba(255, 0, 90, .45), 0 15px 50px rgba(0,0,0,.5);
+            animation: hellPop .22s ease-out;
+        }
+
+        #hellConfirmModal h2 {
+            margin: 0 0 12px;
+            color: #ff3d6e;
+            font-size: 24px;
+            text-shadow: 0 0 12px rgba(255, 40, 100, .55);
+        }
+
+        #hellConfirmModal p {
+            margin: 8px 0;
+            line-height: 1.5;
+            font-weight: 700;
+        }
+
+        #hellConfirmModal .hell-warning {
+            margin: 14px 0 18px;
+            color: #ffd4df;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        #hellConfirmModal .hell-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        #hellConfirmModal button {
+            flex: 1;
+            margin: 0;
+            padding: 12px 10px;
+            border-radius: 12px;
+            border: 0;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        #hellAcceptBtn {
+            background: linear-gradient(135deg, #ff315f, #ff6a00);
+            color: white;
+        }
+
+        #hellCancelBtn {
+            background: rgba(255,255,255,.12);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,.2) !important;
+        }
+
+        @keyframes hellPop {
+            from { transform: scale(.88); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        #gameOverModal {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(15,30,55,.72)
+        }
+
+            #gameOverModal .modal-card {
+                width: min(100%,340px);
+                padding: 22px;
+                border-radius: 18px;
+                background: white;
+                color: #24425d;
+                text-align: center;
+                box-shadow: 0 12px 45px rgba(0,0,0,.3)
+            }
+
+            #gameOverModal h2 {
+                margin: 0 0 10px;
+                color: #1686c8;
+                font-size: 22px
+            }
+
+            #gameOverModal p {
+                margin: 8px 0
+            }
+
+        #playerName {
+            width: 100%;
+            margin: 12px 0 4px;
+            padding: 12px;
+            border: 2px solid #b7dff2;
+            border-radius: 10px;
+            outline: none;
+            font-size: 16px
+        }
+
+            #playerName:focus {
+                border-color: #1686c8
+            }
+
+        #gameOverModal button {
+            width: 100%;
+            margin-top: 8px
+        }
+
+        #saveOnlineBtn {
+            background: #1686c8;
+            color: white
+        }
+
+        #skipOnlineBtn {
+            background: #e9f4fa;
+            color: #24425d
+        }
+
+        #saveOnlineBtn:disabled {
+            opacity: .6;
+            cursor: wait
+        }
+    
+        #playerSetupModal {
+            position: fixed; inset: 0; z-index: 15000; display: none; align-items: center; justify-content: center; padding: 18px; background: rgba(24,58,78,.52);
+        }
+        #playerSetupModal.show { display: flex; }
+        #playerSetupModal .player-setup-card { width: min(100%, 370px); text-align:center; }
+        #playerSetupModal h2 { margin:0 0 10px; color:#1686c8; font-size:22px; }
+        #playerSetupModal p { margin:8px 0; }
+        #playerSetupInput { width:100%; box-sizing:border-box; margin:12px 0 4px; padding:12px; border:2px solid #b7dff2; border-radius:10px; outline:none; font-size:16px; }
+        #playerSetupInput:focus { border-color:#1686c8; }
+        #playerSetupModal button { width:100%; margin-top:8px; }
+        #playerSetupConfirm { background:#1686c8; color:#fff; }
+        #playerSetupCancel { background:#e9f4fa; color:#24425d; }
+
+        /* ===== POPUP CREDIT / INTRO ===== */
+        #welcomeModal {
+            position: fixed;
+            inset: 0;
+            z-index: 20000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background: rgba(24,58,78,.52);
+        }
+        #welcomeModal.show { display: flex; }
+        #welcomeModal .welcome-card {
+            width: min(100%, 370px);
+            max-height: min(90vh, 650px);
+            overflow-y: auto;
+            padding: 22px;
+            border-radius: 22px;
+            background: linear-gradient(145deg,#ffffff 0%,#f7fcff 58%,#fffdf4 100%);
+            border: 2px solid rgba(255,255,255,.98);
+            box-shadow: 0 14px 38px rgba(36,100,140,.24);
+            color: #24425d;
+            text-align: center;
+        }
+        #welcomeModal .welcome-kicker { margin:0 0 7px; color:#6d8b9c; font-size:10px; font-weight:900; letter-spacing:2px; text-transform:uppercase; }
+        #welcomeModal h2 { margin: 0; color:#1686c8; font-size:27px; letter-spacing:.5px; }
+        #welcomeModal .welcome-subtitle { margin:5px 0 13px; color:#6f8795; font-size:11px; font-weight:700; letter-spacing:.4px; }
+        #welcomeModal .welcome-rule { height:1px; margin:0 8px 13px; background:#dceef7; }
+        #welcomeModal .welcome-credit { position:relative; overflow:hidden; margin:0 0 10px; padding:10px 12px; border-radius:13px; background:linear-gradient(135deg,#f8fdff 0%,#eef8fc 100%); border:1px solid #cfe7f2; box-shadow:inset 0 0 0 1px rgba(255,255,255,.75); }
+        #welcomeModal .welcome-credit::before { content:""; position:absolute; inset:2px; border-radius:11px; pointer-events:none; background:linear-gradient(90deg,rgba(255,190,83,0),rgba(255,190,83,.7),rgba(255,128,57,0),rgba(255,190,83,.55),rgba(255,190,83,0)); background-size:220% 100%; background-position:120% 0; opacity:.55; animation:creatorShimmer 3.8s ease-in-out infinite; }
+        #welcomeModal .welcome-credit::after { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; border:1px solid rgba(126,190,218,.22); box-shadow:inset 0 0 10px rgba(116,190,221,.12); }
+        #welcomeModal .welcome-credit-label, #welcomeModal .welcome-author { position:relative; z-index:1; }
+        @keyframes creatorShimmer { 0%{background-position:120% 0;opacity:.25;} 45%{background-position:0% 0;opacity:.7;} 100%{background-position:-120% 0;opacity:.25;} }
+        #welcomeModal .welcome-credit-label { margin:0 0 3px; color:#7c96a5; font-size:9px; font-weight:900; letter-spacing:1.2px; text-transform:uppercase; }
+        #welcomeModal .welcome-author { margin:0; color:#24425d; font-size:15px; font-weight:900; }
+        #welcomeModal .welcome-version { display:inline-block; margin:0 0 13px; padding:4px 10px; border-radius:999px; background:#eaf7ff; color:#35779a; font-size:10px; font-weight:900; }
+        #welcomeModal .welcome-section-title { margin:11px 0 7px; color:#557487; font-size:10px; font-weight:900; letter-spacing:1px; text-transform:uppercase; text-align:left; }
+        #welcomeModal .welcome-guide { margin:0; padding:10px; border-radius:14px; background:#fff; border:1px solid #dceef7; text-align:left; font-size:11px; line-height:1.5; }
+        #welcomeModal .welcome-guide p { margin:6px 0; padding-bottom:6px; border-bottom:1px solid #edf4f7; }
+        #welcomeModal .welcome-guide p:last-child { margin-bottom:0; padding-bottom:0; border-bottom:0; }
+        #welcomeModal .welcome-guide strong { color:#166088; }
+        #welcomeModal .welcome-install { margin-top:9px; padding:10px; border-radius:14px; background:linear-gradient(135deg,#fffdf1,#ffffff); border:1px solid #eee2a9; text-align:left; font-size:11px; line-height:1.5; }
+        #welcomeModal .welcome-install strong { color:#806b19; }
+        #welcomeModal .welcome-note { margin:11px 0 8px; font-size:10px; color:#718797; }
+        #welcomeModal .welcome-close { width:100%; margin-top:6px; background:linear-gradient(135deg,#fff3b0,#ffffff); color:#7a5b00; box-shadow:0 4px 0 #e4cf72; }
+        #welcomeModal .welcome-no-show { display:flex; align-items:center; justify-content:center; gap:7px; margin-top:10px; font-size:10px; color:#5d7483; cursor:pointer; }
+        #welcomeModal .welcome-no-show input { width:15px; height:15px; accent-color:#1686c8; cursor:pointer; }
+    </style>
+</head>
+<body>
+    <div class="game" id="selectScreen">
+        <h1>🐤 FLAPPY BIRD</h1>
+        <div class="game-version" id="gameVersion">v1.0.0</div>
+        <div id="menuMain">
+        <div class="tag" id="menuMode">☀️ CHỌN CHIM & MAP TRƯỚC KHI CHƠI</div>
+        <p class="menu-best">🏆 Kỷ lục của mày: <b id="menuBest">0</b></p>
+
+        <section class="bird-select" aria-label="Chọn chim">
+            <h2>🐤 CHỌN CHIM</h2>
+            <div class="bird-grid" id="birdGrid">
+                <button class="bird-card selected" data-bird="yellow" type="button"><canvas class="bird-preview" data-preview="yellow" width="70" height="55"></canvas><strong>Vàng</strong><small>Cân bằng</small></button>
+                <button class="bird-card locked" data-bird="red" type="button"><canvas class="bird-preview" data-preview="red" width="70" height="55"></canvas><strong>Đỏ</strong><small>🔒 Vượt 30 cột Địa Ngục</small></button>
+                <button class="bird-card locked" data-bird="pink" type="button"><canvas class="bird-preview" data-preview="pink" width="70" height="55"></canvas><strong>Hồng</strong><small>🔒 Đạt 5 danh hiệu</small></button>
+                <button class="bird-card locked" data-bird="orange" type="button"><canvas class="bird-preview" data-preview="orange" width="70" height="55"></canvas><strong>Cam</strong><small>🔒 20 cột ở Cổ Điển + Lửa + Băng</small></button>
+                <button class="bird-card locked rarity-rare" data-bird="night" type="button"><canvas class="bird-preview" data-preview="night" width="70" height="55"></canvas><strong>Bóng Đêm</strong><span class="rarity-label">Hiếm</span><small>🔒 30 cột tổng</small></button>
+                <button class="bird-card locked rarity-epic" data-bird="thunder" type="button"><canvas class="bird-preview" data-preview="thunder" width="70" height="55"></canvas><strong>Sấm</strong><span class="rarity-label">Sử thi</span><small>🔒 20 Lửa + 20 Băng</small></button>
+                <button class="bird-card locked rarity-legendary" data-bird="galaxy" type="button"><canvas class="bird-preview" data-preview="galaxy" width="70" height="55"></canvas><strong>Thiên Hà</strong><span class="rarity-label">Huyền thoại</span><small>🔒 Đạt 60 điểm</small></button>
+                <button class="bird-card locked rarity-legendary" data-bird="gold" type="button"><canvas class="bird-preview" data-preview="gold" width="70" height="55"></canvas><strong>Hoàng Kim</strong><span class="rarity-label">Huyền thoại</span><small>🔒 Top 1 ít nhất 1 lần</small></button>
+            </div>
+            <div class="selection-note" id="selectionNote">🟡 Chim Vàng: cân bằng, dễ làm quen.</div>
+        </section>
+
+        <section class="map-select" aria-label="Chọn map">
+            <h2>🗺️ CHỌN MAP</h2>
+            <div class="map-grid" id="mapGrid">
+                <button class="map-card selected" data-map="classic" type="button"><strong>🌿 Cổ Điển</strong><small>Trời xanh, cột xanh lá</small></button>
+                <button class="map-card" data-map="fire" type="button"><strong>🔥 Lửa</strong><small>Nền đỏ cam, nham thạch</small></button>
+                <button class="map-card" data-map="ice" type="button"><strong>❄️ Băng</strong><small>Nền xanh lạnh, cột băng</small></button>
+                <button class="map-card" data-map="hell" type="button"><strong>👿 Địa Ngục</strong><small>Nền tím đen, cột đỏ</small></button>
+            </div>
+        </section>
+
+        <button id="enterGame" type="button">CHƠI NGAY ▶</button>
+        </div>
+
+        <div class="menu-action-grid" aria-label="Menu phụ">
+            <button id="fashionOpenBtn" type="button">👕 THỜI TRANG</button>
+            <button id="leaderboardOpenBtn" type="button">🏆 XẾP HẠNG</button>
+            <button id="profileOpenBtn" type="button">👤 HỒ SƠ</button>
+            <button id="titleOpenBtn" type="button">🏅 DANH HIỆU</button>
+        </div>
+        <div id="fashionScreen">
+            <div class="fashion-panel" id="fashionHome">
+                <h2 class="fashion-title">👕 THỜI TRANG</h2>
+                <p class="fashion-subtitle">Demo mở khóa toàn bộ — chọn riêng từng mục, game tự lưu lựa chọn.</p>
+                <button class="fashion-back" id="fashionBackMenu" type="button">← QUAY LẠI GIAO DIỆN</button>
+                <div class="fashion-menu-grid">
+                    <button class="fashion-category" id="openHatSlide" type="button"><span class="big">🎩</span>MŨ CHO CHIM<small>Chọn phụ kiện đội đầu</small></button>
+                    <button class="fashion-category" id="openTrailSlide" type="button"><span class="big">✨</span>HIỆU ỨNG BAY<small>Chọn thứ bay phía sau</small></button>
+                </div>
+                <p class="fashion-note" id="fashionSummary">🎩 Mũ: Không · ✨ Hiệu ứng: Lông vũ</p>
+            </div>
+            <div class="fashion-panel" id="hatSlide" style="display:none">
+                <h2 class="fashion-title">🎩 MŨ CHO CHIM</h2>
+                <p class="fashion-subtitle">Chọn một chiếc mũ. Lựa chọn được lưu riêng.</p>
+                <button class="fashion-back" id="backFromHat" type="button">← QUAY LẠI THỜI TRANG</button>
+                <div class="fashion-grid" id="hatGrid"></div>
+                <p class="fashion-note" id="hatNote"></p>
+            </div>
+            <div class="fashion-panel" id="trailSlide" style="display:none">
+                <h2 class="fashion-title">✨ HIỆU ỨNG BAY</h2>
+                <p class="fashion-subtitle">Chọn hiệu ứng để lại phía sau mỗi lần chim bay.</p>
+                <button class="fashion-back" id="backFromTrail" type="button">← QUAY LẠI THỜI TRANG</button>
+                <div class="fashion-grid" id="trailGrid"></div>
+                <p class="fashion-note" id="trailNote"></p>
+            </div>
+        </div>
+
+        <div id="titleScreen">
+            <div class="title-panel">
+                <h2>🏅 BỘ SƯU TẬP DANH HIỆU</h2>
+                <p class="title-subtitle">Mở danh hiệu bằng điểm số, cột map, cổng dịch chuyển, buff và thời trang.</p>
+                <div class="title-actions">
+                    <button class="title-back" id="titleBackMenu" type="button">← QUAY LẠI GIAO DIỆN</button>
+                    <button class="title-clear" id="titleClearBtn" type="button">🚫 BỎ DANH HIỆU</button>
+                </div>
+                <div class="title-grid" id="titleGrid"></div>
+                <p class="title-note" id="titleNote">Đang chọn: 🐣 Chưa có danh hiệu</p>
+            </div>
+        </div>
+
+        <div id="leaderboardScreen">
+            <div class="leaderboard-panel">
+                <h2>🏆 BẢNG XẾP HẠNG</h2>
+                <p class="leaderboard-subtitle">Top 10 người chơi có điểm cao nhất.</p>
+                <section class="leaderboard-box">
+                    <div id="leaderboardList"><div class="lb-message">Đang tải bảng xếp hạng...</div></div>
+                </section>
+                <button class="leaderboard-back" id="leaderboardBackMenu" type="button">← QUAY LẠI GIAO DIỆN</button>
+            </div>
+        </div>
+        <div id="profileScreen">
+            <div class="profile-panel">
+                <h2>👤 HỒ SƠ NGƯỜI CHƠI</h2>
+                <p class="profile-subtitle">Thống kê cá nhân và kỷ lục theo từng bản đồ.</p>
+                <section class="profile-card">
+                    <div class="profile-head">
+                        <div class="profile-avatar">🐤</div>
+                        <div>
+                            <div class="profile-name" id="profilePlayerName">Người chơi</div>
+                            <div class="profile-rank" id="profileRankText">🏆 Chưa có thứ hạng</div>
+                        </div>
+                    </div>
+                    <div class="profile-stats">
+                        <div class="profile-stat"><b id="profileBest">0</b><small>KỶ LỤC CAO NHẤT</small></div>
+                        <div class="profile-stat"><b id="profileGames">0</b><small>SỐ VÁN ĐÃ CHƠI</small></div>
+                        <div class="profile-stat"><b id="profileColumns">0</b><small>TỔNG CỘT VƯỢT</small></div>
+                        <div class="profile-stat"><b id="profileTitles">0/0</b><small>DANH HIỆU</small></div>
+                    </div>
+                </section>
+                <section class="profile-card">
+                    <h3 class="profile-section-title">🗺️ KỶ LỤC THEO MAP</h3>
+                    <div id="profileMapRecords"></div>
+                </section>
+                <section class="profile-card">
+                    <h3 class="profile-section-title">🏆 LỊCH SỬ BXH</h3>
+                    <div class="rank-history">
+                        <div><b id="profileTop1">0</b><small>🥇 TOP 1</small></div>
+                        <div><b id="profileTop2">0</b><small>🥈 TOP 2</small></div>
+                        <div><b id="profileTop3">0</b><small>🥉 TOP 3</small></div>
+                    </div>
+                </section>
+                <button class="profile-back" id="changePlayerNameBtn" type="button">✏️ ĐỔI TÊN NGƯỜI CHƠI</button>
+                <button class="profile-back" id="profileBackMenu" type="button">← QUAY LẠI GIAO DIỆN</button>
+            </div>
+        </div>
+
+
+    </div>
+
+    <div class="game" id="gameScreen">
+        <h1>🐤 FLAPPY BIRD</h1>
+        <div class="tag" id="mode">☀️ TRỜI NẮNG</div>
+        <div class="info"><span>⭐ Điểm: <b id="score">0</b></span><span>🏆 Kỷ lục: <b id="best">0</b></span></div>
+        <div class="canvas-container">
+            <div id="buffStatus">✨ Đang chờ vật phẩm...</div>
+            <canvas id="game" width="360" height="540"></canvas>
+            <button id="pauseBtn" type="button" aria-label="Tạm dừng" title="Tạm dừng">⏸</button>
+            <div id="skillCooldown" aria-live="polite" aria-label="Hồi chiêu kỹ năng">
+                <div id="skillCooldownIcon">🌑</div>
+                <div id="skillCooldownText">20</div>
+            </div>
+        </div>
+        <button id="start">BẤM ĐỂ BAY</button>
+        <button id="skillBtn" type="button" disabled aria-hidden="true">✨ KỸ NĂNG TỰ ĐỘNG</button>
+        <div class="btn-group">
+            <button id="backToMenuBtn" type="button">⚙️ ĐỔI CHIM & MAP</button>
+        </div>
+        <div class="tip">Bấm / chạm / nhấn SPACE để bay lên</div>
+        <div class="help"><b>🎁 Vật phẩm chiến thuật</b><br>🍎 Táo — bất tử 5s<br>🍗 Đùi gà — thu nhỏ 8s<br>🧲 Nam châm — hút vật phẩm<br>🐌 Chậm — giảm tốc<br>🧭 La Bàn — dự báo vị trí cột tiếp theo</div>
+    </div>
+
+
+    <div id="hellConfirmModal" role="dialog" aria-modal="true" aria-labelledby="hellConfirmTitle">
+        <div class="hell-modal-card">
+            <h2 id="hellConfirmTitle">👿 ĐỊA NGỤC</h2>
+            <p>ĐỊA NGỤC CHỈ DÀNH CHO NHỮNG NGƯỜI CHƠI KINH NGHIỆM.</p>
+            <div class="hell-warning">🔥 Tốc độ cao và độ khó sẽ tăng dần. Ngươi có chắc muốn bước vào?</div>
+            <div class="hell-actions">
+                <button id="hellCancelBtn" type="button">QUAY LẠI</button>
+                <button id="hellAcceptBtn" type="button">ĐỒNG Ý 😈</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="gameOverModal">
+        <div class="modal-card">
+            <h2>🐤 TOANG RỒI!</h2>
+            <p>Điểm của mày: <b id="onlineFinalScore">0</b></p>
+            <p id="onlineSaveStatus" style="font-size:12px">☁️ Điểm sẽ tự động cập nhật lên BXH.</p>
+            <button id="skipOnlineBtn" type="button">ĐÓNG</button>
+        </div>
+    </div>
+
+    <div id="playerSetupModal" role="dialog" aria-modal="true" aria-labelledby="playerSetupTitle">
+        <div class="modal-card player-setup-card">
+            <h2 id="playerSetupTitle">👤 TÊN NGƯỜI CHƠI</h2>
+            <p id="playerSetupHint">Nhập tên của mày. Tên này sẽ được dùng cho BXH và tự động lưu điểm.</p>
+            <input id="playerSetupInput" type="text" maxlength="20" placeholder="Tên của mày..." autocomplete="nickname">
+            <button id="playerSetupConfirm" type="button">✅ XÁC NHẬN TÊN</button>
+            <button id="playerSetupCancel" type="button">QUAY LẠI</button>
+            <p id="playerSetupStatus" style="font-size:12px"></p>
+        </div>
+    </div>
+
+
+    <div id="welcomeModal" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+        <div class="welcome-card">
+            <p class="welcome-kicker">A PERSONAL GAME PROJECT · 2026</p>
+            <h2 id="welcomeTitle">🐤 FLAPPY BIRD</h2>
+            <p class="welcome-subtitle">CHẠM · KỸ NĂNG · SỐNG SÓT</p>
+            <div class="welcome-rule"></div>
+            <div class="welcome-credit">
+                <p class="welcome-credit-label">CREATED BY</p>
+                <p class="welcome-author">QMinhSTD</p>
+            </div>
+            <div class="welcome-version" id="welcomeVersion">v1.0.0</div>
+
+            <p class="welcome-section-title">HOW TO PLAY</p>
+            <div class="welcome-guide">
+                <p>👆 <strong>Điện thoại</strong> — Chạm màn hình để bay.</p>
+                <p>🖱️ <strong>Máy tính</strong> — Click chuột hoặc nhấn <strong>Space / ↑</strong>.</p>
+                <p>⏸️ <strong>Tạm dừng</strong> — Nhấn <strong>P</strong> hoặc nút tạm dừng.</p>
+            </div>
+
+            <p class="welcome-section-title">PLAY MORE CONVENIENTLY</p>
+            <div class="welcome-install">
+                📱 Trong menu trình duyệt, chọn <strong>“Thêm vào màn hình chính”</strong> / <strong>“Add to Home Screen”</strong>.<br>
+                Sau đó mở game từ biểu tượng ngoài màn hình như một game riêng.
+            </div>
+
+            <p class="welcome-note">Màn hình giới thiệu này sẽ không xuất hiện lại nếu bro chọn “Không hiển thị lại”.</p>
+            <button class="welcome-close" id="welcomeCloseBtn" type="button">🚀 BẮT ĐẦU CHƠI</button>
+            <label class="welcome-no-show"><input type="checkbox" id="welcomeNoShow"> Không hiển thị lại</label>
+        </div>
+    </div>
+
+    <script>
+        // ===== PHIÊN BẢN & SAVE =====
+        const GAME_VERSION = "1.2.1";
+        const SAVE_VERSION = 3;
+        const SAVE_META_KEY = "flappySaveMeta";
+
+        function migrateSaveData() {
+            try {
+                const oldMeta = JSON.parse(localStorage.getItem(SAVE_META_KEY) || "null") || {};
+                const oldVersion = Number(oldMeta.saveVersion) || 0;
+
+                // Save cũ không có version vẫn được giữ nguyên.
+                // Từ đây về sau chỉ bổ sung field mới, không xóa tiến trình cũ.
+                if (oldVersion < 1) {
+                    const defaults = {
+                        bestScore: 0, batClears: 0, hellBest: 0, iceColumns: 0,
+                        fireColumns: 0, classicColumns: 0, pickups: 0,
+                        fashionSeen: [], gamesPlayed: 0, totalColumns: 0, mapBest: {classic:0,fire:0,ice:0,hell:0}, mapColumns: {classic:0,fire:0,ice:0,hell:0}, rankCounts: {1:0,2:0,3:0}
+                    };
+                    const rawStats = JSON.parse(localStorage.getItem("flappyAchievementStats") || "null");
+                    const stats = rawStats && typeof rawStats === "object" ? rawStats : {};
+                    for (const [key, value] of Object.entries(defaults)) {
+                        if (stats[key] === undefined || stats[key] === null) stats[key] = value;
+                    }
+                    if (!Array.isArray(stats.fashionSeen)) stats.fashionSeen = [];
+                    localStorage.setItem("flappyAchievementStats", JSON.stringify(stats));
+                }
+
+                localStorage.setItem(SAVE_META_KEY, JSON.stringify({
+                    saveVersion: SAVE_VERSION,
+                    gameVersion: GAME_VERSION,
+                    updatedAt: Date.now()
+                }));
+            } catch (e) {
+                console.warn("Không thể kiểm tra/migrate save:", e);
+            }
+        }
+
+        migrateSaveData();
+        const versionBadge = document.getElementById("gameVersion");
+        if (versionBadge) versionBadge.textContent = "v" + GAME_VERSION;
+
+        // ===== POPUP GIỚI THIỆU GAME =====
+        const WELCOME_SEEN_KEY = "flappyWelcomePopupSeen";
+        const welcomeModal = document.getElementById("welcomeModal");
+        const welcomeVersion = document.getElementById("welcomeVersion");
+        const welcomeCloseBtn = document.getElementById("welcomeCloseBtn");
+        const welcomeNoShow = document.getElementById("welcomeNoShow");
+        if (welcomeVersion) welcomeVersion.textContent = "v" + GAME_VERSION;
+        function closeWelcomePopup(){
+            if (welcomeNoShow && welcomeNoShow.checked) {
+                try { localStorage.setItem(WELCOME_SEEN_KEY, "1"); } catch(e) {}
+            }
+            if (welcomeModal) welcomeModal.classList.remove("show");
+        }
+        try {
+            if (!localStorage.getItem(WELCOME_SEEN_KEY) && welcomeModal) welcomeModal.classList.add("show");
+        } catch(e) {
+            if (welcomeModal) welcomeModal.classList.add("show");
+        }
+        if (welcomeCloseBtn) welcomeCloseBtn.addEventListener("click", closeWelcomePopup);
+        if (welcomeModal) welcomeModal.addEventListener("click", e => { if (e.target === welcomeModal) closeWelcomePopup(); });
+        document.addEventListener("keydown", e => { if (e.code === "Escape" && welcomeModal && welcomeModal.classList.contains("show")) closeWelcomePopup(); });
+
+        "use strict";
+        const canvas = document.getElementById("game"), ctx = canvas.getContext("2d");
+        const W = canvas.width, H = canvas.height, GROUND = 48, PIPE_W = 58, BIRD_SIZE = 42;
+        // TEST: cổng đầu tiên sau 2 cột, các cổng tiếp theo sau mỗi 20 cột.
+        // Bản thật: đổi cả hai thành 40 để cổng xuất hiện ở 40, 80, 120...
+        const FIRST_PORTAL_SCORE = 30;
+        const PORTAL_SCORE_INTERVAL = 30;
+        const BAT_MODE_DURATION = 15 * 60; // 15 giây (15 * 60 frames)
+        const $ = id => document.getElementById(id);
+
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } else if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playScoreSound() {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
+            } catch (e) { }
+        }
+
+        function playMilestoneSound() {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08);
+                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.16);
+                gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.35);
+            } catch (e) { }
+        }
+
+        function playDieSound() {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.35);
+                gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.35);
+            } catch (e) { }
+        }
+
+        let best = 0; try { best = Number(localStorage.getItem("flappyBossBest") || 0) } catch (e) { }
+        $("best").textContent = best; $("menuBest").textContent = best;
+        let gameEntered = false;
+
+        let currentMap = "classic";
+        try { const savedMap = localStorage.getItem("flappyBirdMap"); if (savedMap) currentMap = savedMap; } catch (e) { }
+
+        const pickupTypes = [
+            { type: "apple", icon: "🍎", label: "BẤT TỬ", duration: 300 },
+            { type: "chicken", icon: "🍗", label: "THU NHỎ", duration: 480 },
+            { type: "magnet", icon: "🧲", label: "NAM CHÂM", duration: 360 },
+            { type: "slow", icon: "🐌", label: "CHẬM THỜI GIAN", duration: 200 },
+            { type: "compass", icon: "🧭", label: "LA BÀN", duration: 360 }
+        ];
+        let bird, pipes, pickups, particles, weatherParticles, floatingTexts, feathers;
+        let score, frame, state, groundOffset, pipeCount;
+        let paused = false;
+        let storm, stormFade, lightning, nextLightning, boltPoints;
+        let effects, pickupTimer;
+
+        // --- KỸ NĂNG 8 CHIM (TỰ ĐỘNG) ---
+        let thunderCharges = 0;
+        let galaxyCharges = 0;
+        let nightCooldown = 0;          // 20s hồi sau mỗi lần né va chạm
+        let nightDodgeGrace = 0;        // thời gian né thực tế
+        let goldenShield = 0;           // thời gian khiên vàng còn hiệu lực
+        let goldenSaveGrace = 0;        // 1.5s bất tử của Hoàng Kim
+        let goldenCooldown = 1800;      // 30s = 1800 frames
+        let galaxySlowTimer = 0;        // 1.5s làm chậm thời gian
+        let thunderPending = 0;         // chờ cột tiếp theo nếu chưa có cột phía trước
+
+        // --- CÁC BIẾN CHO MINIGAME DƠI VÀ CÁNH CỔNG ---
+        let batMode = false;
+        let batTimer = 0;
+        let portal = null;
+        let bats = [];
+        let batSpawnTimer = 0;
+        let batIntroTimer = 0; // Thời gian cảnh báo trước khi dơi xuất hiện
+        let portalSpawnedFor100 = false;
+        let portalCooldown = 0;
+        let postBatGraceTimer = 0; // 2.5 giây bay ổn định sau khi thoát map phụ
+        let portalEntryFreeze = false; // khóa cột trong lúc chim vào cổng
+        let nextPortalScore = FIRST_PORTAL_SCORE;
+
+        const TEST_ALL_BIRDS = false; // Bản chính: mở khóa chim theo đúng điều kiện
+        const birdDefs = {
+            yellow: { name: "Vàng", rarity:"common", rarityLabel:"Thường", unlockText: "Mở sẵn", body: "#ffbf2f", light: "#ffdf62", belly: "#f5a92b", wing: "#f5a52c", wingLight: "#ffdf68", beak: "#f15a24", jump: -6.3, scale: 1, duration: 1 },
+            red: { name: "Đỏ", rarity:"rare", rarityLabel:"Hiếm", unlockText: "Vượt 30 cột Địa Ngục", body: "#e5232e", light: "#ff777e", belly: "#bd1723", wing: "#c91825", wingLight: "#ff8e94", beak: "#ff8a24", jump: -6.3, scale: .8, duration: 1 },
+            pink: { name: "Hồng", rarity:"legendary", rarityLabel:"Huyền thoại", unlockText: "Đạt 5 danh hiệu", body: "#ff4fa3", light: "#ffacd5", belly: "#e91e83", wing: "#e91e83", wingLight: "#ffd0e8", beak: "#ff8a45", jump: -6.3, scale: 1, duration: 1.35 },
+            orange: { name: "Cam", rarity:"epic", rarityLabel:"Sử thi", unlockText: "20 cột ở Cổ Điển + Lửa + Băng", body: "#ff8a32", light: "#ffc06a", belly: "#f07822", wing: "#ed7628", wingLight: "#ffd08a", beak: "#ed5427", jump: -7.05, scale: 1, duration: 1 },
+            night: { name: "Bóng Đêm", rarity:"rare", rarityLabel:"Hiếm", unlockText: "Đạt 30 cột tổng", body: "#28365f", light: "#6e8bd4", belly: "#1b2445", wing: "#202c52", wingLight: "#91a7ee", beak: "#78d7ff", jump: -6.3, scale: 1, duration: 1 },
+            thunder: { name: "Sấm", rarity:"epic", rarityLabel:"Sử thi", unlockText: "20 cột Map Lửa + 20 cột Map Băng", body: "#6948c7", light: "#a98cf2", belly: "#4a2c9b", wing: "#5436ad", wingLight: "#d5c7ff", beak: "#ffe36e", jump: -6.3, scale: 1, duration: 1 },
+            galaxy: { name: "Thiên Hà", rarity:"legendary", rarityLabel:"Huyền thoại", unlockText: "Đạt 60 điểm", body: "#5d3bc4", light: "#c9a8ff", belly: "#321b82", wing: "#713ee0", wingLight: "#f0d9ff", beak: "#ff9be7", jump: -6.3, scale: 1, duration: 1 },
+            gold: { name: "Hoàng Kim", rarity:"legendary", rarityLabel:"Huyền thoại", unlockText: "Đạt Top 1 ít nhất 1 lần", body: "#e4aa27", light: "#fff0a3", belly: "#b87912", wing: "#c88a18", wingLight: "#fff5bd", beak: "#ff6f3d", jump: -6.3, scale: 1, duration: 1 }
+        };
+        let selectedBird = "yellow";
+        const fashionHats = {
+            none:{name:"Không đội",icon:"🚫"},
+            straw:{name:"Mũ rơm",icon:"🌾"},
+            helmet:{name:"Mũ cối",icon:"🪖"},
+            cap:{name:"Mũ lưỡi trai",icon:"🧢"},
+            crown:{name:"Vương miện",icon:"👑"},
+            cowboy:{name:"Mũ cao bồi",icon:"🤠"},
+            pumpkin:{name:"Mũ bí ngô",icon:"🎃"},
+            devil:{name:"Sừng quỷ",icon:"😈"},
+            witch:{name:"Mũ phù thủy",icon:"🎩"},
+            ninja:{name:"Khăn ninja",icon:"🥷"},
+            santa:{name:"Mũ Noel",icon:"🎄"},
+            chef:{name:"Mũ đầu bếp",icon:"👨‍🍳"},
+            sunglasses:{name:"Kính đen",icon:"🕶️"},
+            cat_ears:{name:"Tai mèo",icon:"🐱"}
+        };
+        const fashionTrails = {
+            feather:{name:"Lông vũ",icon:"🪶"}, heart:{name:"Trái tim",icon:"❤️"}, drop:{name:"Giọt nước",icon:"💧"}, star:{name:"Ngôi sao",icon:"⭐"}, fire:{name:"Lửa",icon:"🔥"}, sparkle:{name:"Tia sáng",icon:"✨"}, petal:{name:"Cánh hoa",icon:"🌸"}, hell:{name:"Khói địa ngục",icon:"💀"}
+        };
+        const achievementTitles = {
+            flight_trainee:{name:"Tập Sự Bay",icon:"🐣",desc:"Đạt 10 điểm",test:()=>achievementStats.bestScore>=10},
+            fire_warrior:{name:"Chiến Binh Lửa",icon:"🔥",desc:"Vượt qua 10 cột ở Map Lửa",test:()=>achievementStats.fireColumns>=10},
+            flight_master:{name:"Bậc Thầy Bay",icon:"🪽",desc:"Đạt 30 điểm",test:()=>achievementStats.bestScore>=30},
+            mist_wanderer:{name:"Lữ Khách Sương Mù",icon:"🌫️",desc:"Chui qua 2 lần Cổng Dịch Chuyển",test:()=>achievementStats.batClears>=2},
+            buff_collector:{name:"Nhà Sưu Tầm Buff",icon:"🎒",desc:"Nhặt 10 vật phẩm",test:()=>achievementStats.pickups>=10},
+            classic_veteran:{name:"Lão Luyện Cổ Điển",icon:"🏛️",desc:"Vượt qua 20 cột ở Map Cổ Điển",test:()=>achievementStats.classicColumns>=20},
+            flight_legend:{name:"Huyền Thoại Bầu Trời",icon:"👑",desc:"Đạt 50 điểm",test:()=>achievementStats.bestScore>=50},
+            bat_hunter:{name:"Kẻ Săn Dơi",icon:"🦇",desc:"Vượt qua 2 lần Đấu Trường Dơi",test:()=>achievementStats.batClears>=2},
+            hell_conqueror:{name:"Kẻ Chinh Phục Địa Ngục",icon:"🔥",desc:"Đạt 20 điểm trong Địa Ngục",test:()=>achievementStats.hellBest>=20},
+            nightmare:{name:"Ác Mộng",icon:"👹",desc:"Đạt 40 điểm trong Địa Ngục",test:()=>achievementStats.hellBest>=40},
+            fashion_fan:{name:"Tín Đồ Thời Trang",icon:"🎩",desc:"Dùng 5 món thời trang khác nhau",test:()=>achievementStats.fashionSeen.length>=5},
+            fashion_king:{name:"Ông Hoàng Thời Trang",icon:"👑",desc:"Dùng 10 món thời trang khác nhau",test:()=>achievementStats.fashionSeen.length>=10},
+            ice_vip:{name:"Chúa Tể Băng Giá",icon:"❄️",desc:"Vượt qua 1 cột ở Map Băng",test:()=>achievementStats.iceColumns>=1},
+            leaderboard_king:{name:"Vua Bảng Xếp Hạng",icon:"👑",desc:"Giữ vị trí Top 1 trên Bảng Xếp Hạng",test:()=>achievementStats.leaderboardRank===1},
+            leaderboard_runnerup:{name:"Á Quân Bất Bại",icon:"⚔️",desc:"Giữ vị trí Top 2 trên Bảng Xếp Hạng",test:()=>achievementStats.leaderboardRank===2},
+            leaderboard_top3:{name:"Cao Thủ Top 3",icon:"🔥",desc:"Giữ vị trí Top 3 trên Bảng Xếp Hạng",test:()=>achievementStats.leaderboardRank===3}
+        };
+        let achievementStats={bestScore:0,batClears:0,hellBest:0,iceColumns:0,fireColumns:0,classicColumns:0,pickups:0,fashionSeen:[],leaderboardRank:0,gamesPlayed:0,totalColumns:0,mapBest:{classic:0,fire:0,ice:0,hell:0},mapColumns:{classic:0,fire:0,ice:0,hell:0},rankCounts:{1:0,2:0,3:0}};
+        let unlockedTitles=[]; let selectedTitle="";
+        try {
+            achievementStats=JSON.parse(localStorage.getItem("flappyAchievementStats")||"null")||achievementStats;
+            achievementStats.bestScore=Number(achievementStats.bestScore)||0;
+            achievementStats.batClears=Number(achievementStats.batClears)||0;
+            achievementStats.hellBest=Number(achievementStats.hellBest)||0;
+            achievementStats.iceColumns=Number(achievementStats.iceColumns)||0;
+            achievementStats.fireColumns=Number(achievementStats.fireColumns)||0;
+            achievementStats.classicColumns=Number(achievementStats.classicColumns)||0;
+            achievementStats.pickups=Number(achievementStats.pickups)||0;
+            achievementStats.fashionSeen=Array.isArray(achievementStats.fashionSeen)?achievementStats.fashionSeen:[];
+            achievementStats.leaderboardRank=Number(achievementStats.leaderboardRank)||0;
+            achievementStats.gamesPlayed=Number(achievementStats.gamesPlayed)||0;
+            achievementStats.totalColumns=Number(achievementStats.totalColumns)||0;
+            if(!achievementStats.mapBest || typeof achievementStats.mapBest!=="object") achievementStats.mapBest={classic:0,fire:0,ice:0,hell:0};
+            if(!achievementStats.mapColumns || typeof achievementStats.mapColumns!=="object") achievementStats.mapColumns={classic:0,fire:0,ice:0,hell:0};
+            if(!achievementStats.rankCounts || typeof achievementStats.rankCounts!=="object") achievementStats.rankCounts={1:0,2:0,3:0};
+            for(const k of ["classic","fire","ice","hell"]){achievementStats.mapBest[k]=Number(achievementStats.mapBest[k])||0;achievementStats.mapColumns[k]=Number(achievementStats.mapColumns[k])||0;}
+            for(const k of ["1","2","3"]) achievementStats.rankCounts[k]=Number(achievementStats.rankCounts[k])||0;
+            unlockedTitles=JSON.parse(localStorage.getItem("flappyUnlockedTitles")||"[]").filter(id=>achievementTitles[id]);
+            selectedTitle=localStorage.getItem("flappySelectedTitle")||"";
+        } catch(e) {}
+        function saveAchievementData(){ try { localStorage.setItem("flappyAchievementStats",JSON.stringify(achievementStats)); localStorage.setItem("flappyUnlockedTitles",JSON.stringify(unlockedTitles)); localStorage.setItem("flappySelectedTitle",selectedTitle); localStorage.setItem(SAVE_META_KEY,JSON.stringify({saveVersion:SAVE_VERSION,gameVersion:GAME_VERSION,updatedAt:Date.now()})); } catch(e){} }
+        function checkAchievements(){
+            for(const [id,t] of Object.entries(achievementTitles)){
+                if(t.test() && !unlockedTitles.includes(id)){ unlockedTitles.push(id); if(typeof addFloatingText==="function") addFloatingText(`${t.icon} DANH HIỆU MỚI: ${t.name}!`,W/2,115,"#ffe66d"); if(typeof playMilestoneSound==="function") playMilestoneSound(); }
+            }
+            if(!selectedTitle && unlockedTitles.length) selectedTitle=unlockedTitles[0];
+            refreshBirdUnlocks();
+            saveAchievementData();
+            if(typeof renderTitleCollection==="function") renderTitleCollection();
+            if(typeof refreshSelectionUI==="function") refreshSelectionUI();
+        }
+        function markFashionSeen(kind,id){ const key=kind+":"+id; if(!achievementStats.fashionSeen.includes(key)){ achievementStats.fashionSeen.push(key); checkAchievements(); } }
+        async function syncSelectedTitleToLeaderboard() {
+            if (!db) return;
+            const docId = localStorage.getItem("flappyLeaderboardDocId");
+            if (!docId) return;
+            const currentTitle = (achievementTitles[selectedTitle] && achievementTitles[selectedTitle].name) ? achievementTitles[selectedTitle].name : "";
+            try {
+                await db.collection("scores").doc(docId).update({ title: currentTitle });
+                if (typeof loadLeaderboard === "function") await loadLeaderboard();
+            } catch (e) {
+                console.log("Sync leaderboard title:", e);
+            }
+        }
+
+        function renderTitleCollection(){
+            const grid=$("titleGrid"); if(!grid) return;
+            grid.innerHTML=Object.entries(achievementTitles).map(([id,t])=>{ const open=unlockedTitles.includes(id); const rankClass=id==="leaderboard_king"?"rank-title rank-1":id==="leaderboard_runnerup"?"rank-title rank-2":id==="leaderboard_top3"?"rank-title rank-3":""; return `<button class="title-card ${rankClass} ${open?'':'locked'} ${selectedTitle===id?'selected':''}" data-title="${id}" type="button"><span class="big">${open?t.icon:'🔒'}</span><strong>${open?t.name:'Danh hiệu ẩn'}</strong><small>${t.desc}</small></button>`; }).join("");
+            document.querySelectorAll("[data-title]").forEach(btn=>btn.addEventListener("click",async()=>{ const id=btn.dataset.title; if(!unlockedTitles.includes(id)) return; selectedTitle=id; saveAchievementData(); renderTitleCollection(); await syncSelectedTitleToLeaderboard(); }));
+            const t=achievementTitles[selectedTitle]; $("titleNote").textContent=t?`Đang chọn: ${t.icon} ${t.name}`:"Đang chọn: 🚫 Không dùng danh hiệu";
+        }
+        let selectedHat="none", selectedTrail="feather";
+        try { selectedHat=localStorage.getItem("flappyBirdHat")||"none"; selectedTrail=localStorage.getItem("flappyBirdTrail")||"feather"; if(!fashionHats[selectedHat])selectedHat="none"; if(!fashionTrails[selectedTrail])selectedTrail="feather"; } catch(e){}
+
+        let unlockedBirds = ["yellow"];
+        function getBirdUnlockState(){
+            if (TEST_ALL_BIRDS) return Object.fromEntries(Object.keys(birdDefs).map(id=>[id,true]));
+            return {
+                yellow:true,
+                red:achievementStats.hellBest>=30,
+                orange:achievementStats.classicColumns>=20 && achievementStats.fireColumns>=20 && achievementStats.iceColumns>=20,
+                pink:unlockedTitles.length>=5,
+                night:achievementStats.totalColumns>=30,
+                thunder:achievementStats.fireColumns>=20 && achievementStats.iceColumns>=20,
+                galaxy:achievementStats.bestScore>=60,
+                gold:(Number(achievementStats.rankCounts?.[1])||0)>=1
+            };
+        }
+        function refreshBirdUnlocks(){
+            const state=getBirdUnlockState();
+            unlockedBirds=Object.keys(birdDefs).filter(id=>state[id]);
+            if(!unlockedBirds.includes(selectedBird)) selectedBird="yellow";
+            try{ localStorage.setItem("flappyBirdUnlocked",JSON.stringify(unlockedBirds)); localStorage.setItem("flappyBirdSelected",selectedBird); }catch(e){}
+        }
+        refreshBirdUnlocks();
+        try{ const chosen=localStorage.getItem("flappyBirdSelected"); if(chosen && unlockedBirds.includes(chosen)) selectedBird=chosen; }catch(e){}
+
+        function addFloatingText(text, x, y, color = "#ffea79") {
+            floatingTexts.push({ text, x, y, alpha: 1, vy: -1.2, color });
+        }
+
+        function spawnFeathers(x, y) {
+            const count=2+Math.floor(Math.random()*2);
+            for(let i=0;i<count;i++) feathers.push({x:x-10+Math.random()*20,y:y+Math.random()*10,vx:-1.5-Math.random()*1.5,vy:.5+Math.random()*1.5,angle:Math.random()*Math.PI*2,spin:(Math.random()-.5)*.15,life:45,color:birdDefs[selectedBird].body,type:selectedTrail});
+        }
+
+        function drawBirdPreview(canvasEl, id) {
+            if (!canvasEl) return; const c = canvasEl.getContext("2d"), d = birdDefs[id], w = canvasEl.width, h = canvasEl.height; c.clearRect(0, 0, w, h); c.save(); c.translate(w / 2, h / 2 + 2); const size = 36 * d.scale; c.rotate(-.04);
+            c.fillStyle = "rgba(35,55,70,.16)"; c.beginPath(); c.ellipse(-1, size * .34, size * .42, size * .13, 0, 0, Math.PI * 2); c.fill();
+            c.fillStyle = d.beak; c.strokeStyle = "#542d20"; c.lineWidth = 1.8; c.lineJoin = "round"; c.beginPath(); c.moveTo(-size * .36, size * .12); c.quadraticCurveTo(-size * .58, size * .02, -size * .62, -size * .08); c.quadraticCurveTo(-size * .59, size * .10, -size * .53, size * .23); c.quadraticCurveTo(-size * .39, size * .22, -size * .36, size * .12); c.closePath(); c.fill(); c.stroke();
+            c.strokeStyle = "#542d20"; c.lineWidth = 2.1; c.lineCap = "round"; c.beginPath(); c.moveTo(-size * .12, size * .34); c.lineTo(-size * .19, size * .49); c.lineTo(-size * .30, size * .52); c.moveTo(size * .05, size * .34); c.lineTo(size * .02, size * .47); c.lineTo(size * .13, size * .50); c.stroke();
+            c.fillStyle = d.body; c.strokeStyle = "#542d20"; c.lineWidth = 2; c.beginPath(); c.ellipse(-size * .025, 0, size * .48, size * .43, -.08, 0, Math.PI * 2); c.fill(); c.stroke();
+            c.fillStyle = d.light; c.beginPath(); c.ellipse(-size * .06, -size * .26, size * .24, size * .11, -.30, Math.PI, Math.PI * 2); c.fill(); c.fillStyle = d.belly; c.beginPath(); c.ellipse(-size * .03, size * .20, size * .30, size * .19, -.08, 0, Math.PI * 2); c.fill();
+            c.save(); c.translate(-size * .22, size * .08); c.rotate(-.12); c.fillStyle = d.wing; c.strokeStyle = "#542d20"; c.lineWidth = 1.8; c.beginPath(); c.ellipse(0, size * .015, size * .31, size * .22, -.12, 0, Math.PI * 2); c.fill(); c.stroke(); c.fillStyle = d.wingLight; c.beginPath(); c.ellipse(-size * .025, -size * .045, size * .235, size * .115, -.14, 0, Math.PI * 2); c.fill(); c.restore();
+            c.fillStyle = "#fffdf7"; c.strokeStyle = "#542d20"; c.lineWidth = 1.8; c.beginPath(); c.ellipse(size * .20, -size * .16, size * .19, size * .235, -.12, 0, Math.PI * 2); c.fill(); c.stroke(); c.fillStyle = "#4b2b20"; c.beginPath(); c.ellipse(size * .255, -size * .13, size * .085, size * .13, -.10, 0, Math.PI * 2); c.fill(); c.fillStyle = "#fff"; c.beginPath(); c.arc(size * .275, -size * .185, size * .035, 0, Math.PI * 2); c.fill();
+            c.fillStyle = d.beak; c.strokeStyle = "#542d20"; c.lineWidth = 1.9; c.beginPath(); c.moveTo(size * .34, -size * .015); c.quadraticCurveTo(size * .60, -size * .13, size * .72, size * .035); c.quadraticCurveTo(size * .67, size * .16, size * .36, size * .16); c.quadraticCurveTo(size * .31, size * .075, size * .34, -size * .015); c.closePath(); c.fill(); c.stroke(); c.restore();
+        }
+        function refreshBirdPreviews() { document.querySelectorAll(".bird-preview").forEach(el => drawBirdPreview(el, el.dataset.preview)) }
+        function refreshSelectionUI(){
+            refreshBirdUnlocks();
+            refreshBirdPreviews();
+            const state=getBirdUnlockState();
+            document.querySelectorAll(".bird-card").forEach(card=>{
+                const id=card.dataset.bird, d=birdDefs[id], unlocked=!!state[id];
+                card.classList.toggle("locked",!unlocked);
+                card.classList.toggle("selected",id===selectedBird);
+                card.classList.remove("rarity-common","rarity-rare","rarity-epic","rarity-legendary");
+                card.classList.add("rarity-"+(d.rarity||"common"));
+                let label=card.querySelector(".rarity-label");
+                if(!label){ label=document.createElement("span"); label.className="rarity-label"; const small=card.querySelector("small"); card.insertBefore(label,small); }
+                label.textContent=d.rarityLabel||"Thường";
+                const small=card.querySelector("small");
+                if(id==="yellow") small.textContent="Mở sẵn · Mặc định";
+                else if(!unlocked) small.textContent="🔒 "+d.unlockText;
+                else small.textContent="Đã mở · "+d.unlockText;
+            });
+            document.querySelectorAll(".map-card").forEach(card=>{card.classList.toggle("selected",card.dataset.map===currentMap);});
+            const descriptions={
+                yellow:"🟡 Chim Vàng · THƯỜNG: cân bằng và dễ làm quen.",
+                red:"🔴 Chim Đỏ · HIẾM: thân nhỏ hơn 20%, dễ lọt khe hơn.",
+                orange:"🟠 Chim Cam · SỬ THI: mỗi lần chạm sẽ bật lên cao hơn.",
+                pink:"🩷 Chim Hồng · HUYỀN THOẠI: buff nhặt được kéo dài thêm 35%.",
+                night:"🌙 Bóng Đêm · HIẾM: né va chạm tự động trong khoảnh khắc ngắn.",
+                thunder:"⚡ Sấm · SỬ THI: tích điện mỗi 10 cột, bấm kỹ năng để phá 1 cột phía trước.",
+                galaxy:"🌌 Thiên Hà · HUYỀN THOẠI: tích năng lượng mỗi 20 cột, bấm kỹ năng để làm chậm thời gian 1,5s.",
+                gold:"👑 Hoàng Kim · HUYỀN THOẠI: nhận Khiên Cứu Mạng sau mỗi 30 cột, tự cứu 1 lần va chạm."
+            };
+            $("selectionNote").textContent=currentMap==="hell"?"☠️ ĐỊA NGỤC KHÔNG DÀNH CHO NGƯỜI YẾU TIM — tốc độ tăng dần, khe vẫn như map thường. Vào là xác định chiến! 🔥":descriptions[selectedBird];
+            updateSkillUI();
+        }
+        function updateFashionSummary(){
+            $("fashionSummary").textContent=`🎩 Mũ: ${fashionHats[selectedHat].name} · ✨ Hiệu ứng: ${fashionTrails[selectedTrail].name}`;
+            $("hatNote").textContent=`Đang chọn: ${fashionHats[selectedHat].icon} ${fashionHats[selectedHat].name}`;
+            $("trailNote").textContent=`Đang chọn: ${fashionTrails[selectedTrail].icon} ${fashionTrails[selectedTrail].name}`;
+        }
+        function buildFashionGrid(){
+            $("hatGrid").innerHTML=Object.entries(fashionHats).map(([id,d])=>`<button class="fashion-card ${id===selectedHat?'selected':''}" data-hat="${id}" type="button"><div class="preview">${d.icon}</div><strong>${d.name}</strong><small>Mở khóa sẵn</small></button>`).join("");
+            $("trailGrid").innerHTML=Object.entries(fashionTrails).map(([id,d])=>`<button class="fashion-card ${id===selectedTrail?'selected':''}" data-trail="${id}" type="button"><div class="preview">${d.icon}</div><strong>${d.name}</strong><small>Mở khóa sẵn</small></button>`).join("");
+            document.querySelectorAll("[data-hat]").forEach(btn=>btn.addEventListener("click",()=>{selectedHat=btn.dataset.hat;markFashionSeen("hat",selectedHat);try{localStorage.setItem("flappyBirdHat",selectedHat)}catch(e){};buildFashionGrid();updateFashionSummary()}));
+            document.querySelectorAll("[data-trail]").forEach(btn=>btn.addEventListener("click",()=>{selectedTrail=btn.dataset.trail;markFashionSeen("trail",selectedTrail);try{localStorage.setItem("flappyBirdTrail",selectedTrail)}catch(e){};buildFashionGrid();updateFashionSummary()})); updateFashionSummary();
+        }
+        function showFashionSlide(slide){
+            $("menuMain").style.display="none";
+            $("fashionOpenBtn").style.display="none";
+            $("leaderboardOpenBtn").style.display="none";
+            $("profileOpenBtn").style.display="none";
+            $("leaderboardScreen").style.display="none";
+            $("profileScreen").style.display="none";
+            $("titleScreen").style.display="none";
+            $("titleOpenBtn").style.display="none";
+            $("fashionScreen").style.display="block";
+            $("fashionHome").style.display=slide==="home"?"block":"none";
+            $("hatSlide").style.display=slide==="hat"?"block":"none";
+            $("trailSlide").style.display=slide==="trail"?"block":"none";
+            buildFashionGrid();
+            window.scrollTo({top:0,behavior:"smooth"});
+        }
+        function renderProfile(){
+            const rank=Number(achievementStats.leaderboardRank)||0;
+            let savedName="Người chơi";
+            try { savedName=localStorage.getItem("flappyLeaderboardName")||"Người chơi"; } catch(e){}
+            $("profilePlayerName").textContent=String(savedName).slice(0,20);
+            $("profileRankText").textContent=rank===1?"👑 Đang giữ Top 1":rank===2?"🥈 Đang giữ Top 2":rank===3?"🥉 Đang giữ Top 3":rank>0?`🏆 Thứ hạng hiện tại: Top ${rank}`:"🏆 Chưa có thứ hạng";
+            $("profileBest").textContent=Number(achievementStats.bestScore)||0;
+            $("profileGames").textContent=Number(achievementStats.gamesPlayed)||0;
+            $("profileColumns").textContent=Number(achievementStats.totalColumns)||0;
+            $("profileTitles").textContent=`${unlockedTitles.length}/${Object.keys(achievementTitles).length}`;
+            $("profileTop1").textContent=Number(achievementStats.rankCounts?.[1])||0;
+            $("profileTop2").textContent=Number(achievementStats.rankCounts?.[2])||0;
+            $("profileTop3").textContent=Number(achievementStats.rankCounts?.[3])||0;
+            const maps={classic:["🌿","Cổ Điển"],fire:["🔥","Lửa"],ice:["❄️","Băng"],hell:["👿","Địa Ngục"]};
+            $("profileMapRecords").innerHTML=Object.entries(maps).map(([id,[icon,name]])=>`<div class="map-record"><div class="map-record-main"><span class="map-record-name">${icon} ${name}</span><span class="map-record-meta">${Number(achievementStats.mapColumns?.[id])||0} cột đã vượt</span></div><span class="map-record-best">${Number(achievementStats.mapBest?.[id])||0} điểm</span></div>`).join("");
+        }
+        function showProfileSlide(){
+            $("menuMain").style.display="none";
+            $("fashionOpenBtn").style.display="none";
+            $("leaderboardOpenBtn").style.display="none";
+            $("profileOpenBtn").style.display="none";
+            $("titleOpenBtn").style.display="none";
+            $("fashionScreen").style.display="none";
+            $("leaderboardScreen").style.display="none";
+            $("titleScreen").style.display="none";
+            $("profileScreen").style.display="block";
+            renderProfile();
+            window.scrollTo({top:0,behavior:"smooth"});
+        }
+
+        function showLeaderboardSlide(){
+            $("menuMain").style.display="none";
+            $("fashionOpenBtn").style.display="none";
+            $("leaderboardOpenBtn").style.display="none";
+            $("profileOpenBtn").style.display="none";
+            $("fashionScreen").style.display="none";
+            $("titleScreen").style.display="none";
+            $("titleOpenBtn").style.display="none";
+            $("leaderboardScreen").style.display="block";
+            if(typeof loadLeaderboard==="function") loadLeaderboard();
+            window.scrollTo({top:0,behavior:"smooth"});
+        }
+        function showTitleSlide(){
+            $("menuMain").style.display="none"; $("fashionOpenBtn").style.display="none"; $("leaderboardOpenBtn").style.display="none"; $("profileOpenBtn").style.display="none"; $("titleOpenBtn").style.display="none";
+            $("fashionScreen").style.display="none"; $("leaderboardScreen").style.display="none"; $("profileScreen").style.display="none"; $("titleScreen").style.display="block";
+            renderTitleCollection(); window.scrollTo({top:0,behavior:"smooth"});
+        }
+        function backToMainMenu(){
+            $("fashionScreen").style.display="none";
+            $("profileScreen").style.display="none";
+            $("leaderboardScreen").style.display="none";
+            $("profileScreen").style.display="none";
+            $("titleScreen").style.display="none";
+            $("fashionOpenBtn").style.display="block";
+            $("leaderboardOpenBtn").style.display="block";
+            $("titleOpenBtn").style.display="block";
+            $("profileOpenBtn").style.display="block";
+            $("menuMain").style.display="block";
+            window.scrollTo({top:0,behavior:"smooth"});
+        }
+        $("fashionOpenBtn").addEventListener("click",()=>showFashionSlide("home"));
+        $("leaderboardOpenBtn").addEventListener("click",showLeaderboardSlide);
+        $("profileOpenBtn").addEventListener("click",showProfileSlide);
+        $("titleOpenBtn").addEventListener("click",showTitleSlide);
+        $("titleBackMenu").addEventListener("click",backToMainMenu);
+        $("titleClearBtn").addEventListener("click",async()=>{ selectedTitle="none"; saveAchievementData(); renderTitleCollection(); await syncSelectedTitleToLeaderboard(); });
+        $("openHatSlide").addEventListener("click",()=>showFashionSlide("hat"));
+        $("openTrailSlide").addEventListener("click",()=>showFashionSlide("trail"));
+        $("backFromHat").addEventListener("click",()=>showFashionSlide("home"));
+        $("backFromTrail").addEventListener("click",()=>showFashionSlide("home"));
+        $("fashionBackMenu").addEventListener("click",backToMainMenu);
+        $("leaderboardBackMenu").addEventListener("click",backToMainMenu);
+        $("profileBackMenu").addEventListener("click",backToMainMenu);
+        buildFashionGrid();
+        renderTitleCollection();
+
+        document.querySelectorAll(".bird-card").forEach(card => card.addEventListener("click", () => { const id = card.dataset.bird; if (!unlockedBirds.includes(id)) { $("selectionNote").textContent = "🔒 Chưa đủ thành tích để mở Chim " + birdDefs[id].name + ": " + birdDefs[id].unlockText + "."; return } selectedBird = id; try { localStorage.setItem("flappyBirdSelected", id) } catch (e) { } refreshSelectionUI() }));
+
+        function enterSelectedMap() {
+            gameEntered = true;
+            $("selectScreen").style.display = "none";
+            $("gameScreen").style.display = "block";
+            reset();
+            startGame();
+        }
+
+        document.querySelectorAll(".map-card").forEach(card => card.addEventListener("click", () => {
+            const chosenMap = card.dataset.map;
+            if (chosenMap === "hell") {
+                $("hellConfirmModal").style.display = "flex";
+                return;
+            }
+            currentMap = chosenMap;
+            try { localStorage.setItem("flappyBirdMap", currentMap) } catch (e) { }
+            refreshSelectionUI();
+        }));
+
+        $("hellCancelBtn").addEventListener("click", () => {
+            $("hellConfirmModal").style.display = "none";
+        });
+
+        $("hellAcceptBtn").addEventListener("click", () => {
+            if (!getSavedPlayerName()) { $("hellConfirmModal").style.display = "none"; openPlayerSetup("start", true); return; }
+            currentMap = "hell";
+            try { localStorage.setItem("flappyBirdMap", currentMap) } catch (e) { }
+            $("hellConfirmModal").style.display = "none";
+            refreshSelectionUI();
+            enterSelectedMap();
+        });
+
+        function makeWeatherParticle() {
+            if (currentMap === "fire") {
+                return { x: Math.random() * W, y: Math.random() * H, size: 2 + Math.random() * 3.5, speed: 1.5 + Math.random() * 2, drift: (Math.random() - .5) * 1, color: Math.random() > .4 ? "#ff3300" : "#ffaa00", alpha: .5 + Math.random() * .3 };
+            } else if (currentMap === "ice") {
+                return { x: Math.random() * W, y: Math.random() * H, size: 1.5 + Math.random() * 3.5, speed: 1.2 + Math.random() * 2, drift: (Math.random() - .5) * 1.2, color: "#ffffff", alpha: .5 + Math.random() * .4 };
+            } else if (currentMap === "hell") {
+                return { x: Math.random() * W, y: Math.random() * H, size: 2 + Math.random() * 3.5, speed: 1.2 + Math.random() * 1.8, drift: (Math.random() - .5) * 1.2, color: Math.random() > .5 ? "#ff0066" : "#bf00ff", alpha: .4 + Math.random() * .4 };
+            } else {
+                return { x: Math.random() * W, y: Math.random() * H, len: 8 + Math.random() * 13, speed: 5 + Math.random() * 5, drift: 1.5 + Math.random() * 1.5 };
+            }
+        }
+
+        function updateSkillUI() {
+            const panel = $("skillCooldown");
+            const icon = $("skillCooldownIcon");
+            const text = $("skillCooldownText");
+            if (!panel || !icon || !text) return;
+
+            // Chỉ hiển thị vòng kỹ năng cho 4 chim mới.
+            const defs = {
+                night:   { icon:"🌑", max:20, kind:"seconds" },
+                thunder: { icon:"⚡", max:10, kind:"columns" },
+                galaxy:  { icon:"✨", max:20, kind:"columns" },
+                gold:    { icon:"👑", max:30, kind:"seconds", gold:true }
+            };
+            const d = defs[selectedBird];
+            if (!d) {
+                panel.style.display = "none";
+                panel.classList.remove("gold-skill");
+                return;
+            }
+
+            panel.style.display = "flex";
+            panel.classList.toggle("gold-skill", !!d.gold);
+            icon.textContent = d.icon;
+
+            let remaining = 0;
+            let progress = 1;
+            if (selectedBird === "night") {
+                remaining = nightCooldown > 0 ? Math.ceil(nightCooldown / 60) : 0;
+                progress = nightCooldown > 0 ? 1 - nightCooldown / 1200 : 1;
+            } else if (selectedBird === "thunder") {
+                const next = score > 0 && score % 10 === 0 ? 0 : (10 - (score % 10)) % 10;
+                remaining = thunderPending > 0 ? 0 : next;
+                progress = remaining === 0 ? 1 : (10 - remaining) / 10;
+            } else if (selectedBird === "galaxy") {
+                const next = score > 0 && score % 20 === 0 ? 0 : (20 - (score % 20)) % 20;
+                remaining = galaxySlowTimer > 0 ? 0 : next;
+                progress = remaining === 0 ? 1 : (20 - remaining) / 20;
+            } else if (selectedBird === "gold") {
+                remaining = goldenCooldown > 0 ? Math.ceil(goldenCooldown / 60) : 0;
+                progress = goldenCooldown > 0 ? 1 - goldenCooldown / 1800 : 1;
+            }
+
+            text.textContent = remaining > 0 ? String(remaining) : "✓";
+            panel.style.setProperty("--skill-progress", `${Math.max(0, Math.min(1, progress)) * 100}%`);
+            panel.title = remaining > 0 ? `Còn ${remaining}${d.kind === "seconds" ? " giây" : " cột"}` : "Sẵn sàng";
+        }
+
+        function registerBirdSkillProgress() {
+            if (selectedBird === "thunder" && score > 0 && score % 10 === 0) {
+                thunderCharges++;
+                thunderPending++;
+                addFloatingText("⚡ SẤM TÍCH ĐIỆN — TỰ ĐỘNG PHÁ CỘT!", W / 2, 165, "#ffe36e");
+                playMilestoneSound();
+                autoUseThunderSkill();
+            }
+            if (selectedBird === "galaxy" && score > 0 && score % 20 === 0) {
+                galaxyCharges++;
+                autoUseGalaxySkill();
+            }
+            updateSkillUI();
+        }
+
+        function autoUseThunderSkill() {
+            if (selectedBird !== "thunder" || thunderPending <= 0 || batMode || portalEntryFreeze) return;
+            const target = pipes.find(p => p.x + PIPE_W > bird.x + 20 && !p.passed);
+            if (!target) return;
+            thunderPending--;
+            thunderCharges = Math.max(0, thunderCharges - 1);
+            pickups = pickups.filter(p => p.pipeRef !== target);
+            burst(target.x + PIPE_W / 2, target.top + target.gap / 2, "#ffe36e");
+            addFloatingText("⚡ TỰ ĐỘNG PHÁ CỘT!", target.x + PIPE_W / 2, target.top + target.gap / 2, "#fff1a8");
+            pipes = pipes.filter(p => p !== target);
+            updateSkillUI();
+        }
+
+        function autoUseGalaxySkill() {
+            if (selectedBird !== "galaxy" || galaxyCharges <= 0 || batMode || portalEntryFreeze) return;
+            galaxyCharges--;
+            galaxySlowTimer = 90; // 1.5s
+            burst(bird.x, bird.y, "#c9a8ff");
+            addFloatingText("✨ TỰ ĐỘNG CHẬM THỜI GIAN 1,5S!", bird.x, bird.y - 28, "#e3d3ff");
+            updateSkillUI();
+        }
+
+        function saveFromCollision(kind) {
+            const target = pipes.find(p => bird.x + 30 > p.x && bird.x - 30 < p.x + PIPE_W && (bird.y < p.top || bird.y > p.top + p.gap));
+            if (target) {
+                bird.y = Math.max(45, Math.min(H - GROUND - 45, target.top + target.gap / 2));
+            } else {
+                bird.y = Math.max(55, Math.min(H - GROUND - 55, bird.y - 25));
+            }
+            bird.vy = 0;
+            if (kind === "night") {
+                nightDodgeGrace = 18;
+                nightCooldown = 1200; // 20s
+                burst(bird.x, bird.y, "#78d7ff");
+                addFloatingText("🌑 NÉ VA CHẠM!", bird.x, bird.y - 28, "#a8dfff");
+            } else {
+                goldenShield = 0;
+                goldenSaveGrace = 90; // 1.5s bất tử
+                burst(bird.x, bird.y, "#ffe66d");
+                addFloatingText("👑 KHIÊN CỨU MẠNG!", bird.x, bird.y - 28, "#fff0a3");
+                playMilestoneSound();
+            }
+            updateSkillUI();
+        }
+
+        function reset() {
+            bird = { x: 85, y: 230, vy: 0 }; pipes = []; pickups = []; particles = []; floatingTexts = []; feathers = []; bats = [];
+            weatherParticles = Array.from({ length: 55 }, () => makeWeatherParticle());
+            score = 0; frame = 0; state = "ready"; paused = false; groundOffset = 0; pipeCount = 0; storm = false; stormFade = 0; lightning = 0; nextLightning = 160; boltPoints = []; effects = { invincible: 0, tiny: 0, magnet: 0, slow: 0, compass: 0 }; pickupTimer = 200;
+            thunderCharges = 0; thunderPending = 0; galaxyCharges = 0; nightCooldown = 0; nightDodgeGrace = 0; goldenShield = 0; goldenSaveGrace = 0; goldenCooldown = 1800; galaxySlowTimer = 0;
+            batMode = false; batTimer = 0; batIntroTimer = 0; portal = null; portalSpawnedFor100 = false; portalCooldown = 0; postBatGraceTimer = 0; portalEntryFreeze = false; nextPortalScore = FIRST_PORTAL_SCORE;
+            $("score").textContent = "0"; $("start").textContent = "CHƠI NGAY"; $("pauseBtn").textContent = "⏸"; $("pauseBtn").disabled = true;
+            $("mode").textContent = currentMap === "fire" ? "🔥 MAP LỬA" : currentMap === "ice" ? "❄️ MAP BĂNG" : currentMap === "hell" ? "👿 MAP ĐỊA NGỤC" : "☀️ TRỜI NẮNG";
+            updateBuffLabel(); refreshSelectionUI();
+        }
+        function startGame() { if (!gameEntered) return; if (state === "over") reset(); if (state === "ready") { achievementStats.gamesPlayed++; saveAchievementData(); } state = "playing"; paused = false; $("pauseBtn").disabled = false; $("pauseBtn").textContent = "⏸"; bird.vy = birdDefs[selectedBird].jump; spawnFeathers(bird.x, bird.y); $("start").textContent = "BẤM ĐỂ BAY" }
+        function togglePause() {
+            if (!gameEntered || state === "over" || state === "ready") return;
+            paused = !paused;
+            if (paused) {
+                state = "paused";
+                $("pauseBtn").textContent = "▶";
+            } else {
+                state = "playing";
+                $("pauseBtn").textContent = "⏸";
+            }
+        }
+
+        function flap() {
+            if (!gameEntered || paused) return;
+            initAudio();
+            if (state === "ready") { startGame(); return }
+            if (state === "over") { reset(); startGame(); return }
+            bird.vy = birdDefs[selectedBird].jump;
+            spawnFeathers(bird.x, bird.y);
+        }
+        canvas.addEventListener("pointerdown", e => { e.preventDefault(); flap() });
+        canvas.addEventListener("pointermove", e => { e.preventDefault() });
+        canvas.addEventListener("touchmove", e => { e.preventDefault() }, { passive: false });
+        $("start").addEventListener("click", flap);
+        // Kỹ năng 8 chim đều tự động; không cần nút kích hoạt.
+        $("pauseBtn").addEventListener("click", togglePause);
+        $("enterGame").addEventListener("click", () => {
+            if (!getSavedPlayerName()) { openPlayerSetup("start", true); return; }
+            if (currentMap === "hell") {
+                $("hellConfirmModal").style.display = "flex";
+                return;
+            }
+            enterSelectedMap();
+        });
+        $("backToMenuBtn").addEventListener("click", () => {
+            gameEntered = false;
+            $("gameScreen").style.display = "none";
+            $("selectScreen").style.display = "block";
+            $("menuMain").style.display = "block";
+            $("fashionScreen").style.display = "none";
+            $("leaderboardScreen").style.display = "none";
+            $("profileScreen").style.display = "none";
+            $("titleScreen").style.display = "none";
+            $("fashionOpenBtn").style.display = "block";
+            $("leaderboardOpenBtn").style.display = "block";
+            $("profileOpenBtn").style.display = "block";
+            $("titleOpenBtn").style.display = "block";
+            window.scrollTo({top:0, behavior:"auto"});
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+            loadLeaderboard();
+        });
+        document.addEventListener("keydown", e => { if (e.code === "Space" || e.code === "ArrowUp") { e.preventDefault(); if (!e.repeat) flap() } else if (e.code === "KeyP") { e.preventDefault(); if (!e.repeat) togglePause() } });
+
+        function getHellDifficulty(value = score) {
+            // Địa Ngục: khó ngay từ đầu, tăng mạnh sau cột 10 và 50.
+            if (value >= 50) return { stage: 3, speedMult: 1.72, gravity: .45, gap: 168, amplitude: 58, frequencyMult: 1.5, spawnGap: 220 };
+            if (value >= 10) return { stage: 2, speedMult: 1.42, gravity: .40, gap: 168, amplitude: 42, frequencyMult: 1.25, spawnGap: 245 };
+            return { stage: 1, speedMult: 1.18, gravity: .36, gap: 168, amplitude: 28, frequencyMult: 1.05, spawnGap: 265 };
+        }
+
+        function addPipe() {
+            if (portalSpawnedFor100 || batMode) return;
+            const hell = currentMap === "hell" ? getHellDifficulty() : null;
+            const gap = hell ? hell.gap : 168;
+            const margin = 65, maxTop = H - GROUND - gap - margin, top = margin + Math.random() * Math.max(1, maxTop - margin); pipeCount++;
+            const p = {
+                x: W + 10, top, baseTop: top, gap, phase: Math.random() * Math.PI * 2,
+                amplitude: hell ? hell.amplitude : (pipeCount > 10 ? 20 + Math.random() * 35 : 0),
+                frequency: hell ? (.025 + Math.random() * .015) * hell.frequencyMult : .025 + Math.random() * .015,
+                moving: hell ? true : pipeCount > 10, passed: false, pickupMade: false
+            };
+            pipes.push(p);
+            if (pipeCount === 11) {
+                storm = true;
+                if (currentMap === "fire") $("mode").textContent = "🌋 NÚI LỬA PHUN TRÀO";
+                else if (currentMap === "ice") $("mode").textContent = "❄️ BÃO TUYẾT LẠNH";
+                else if (currentMap === "hell") $("mode").textContent = "👿 LINH HỒN TRỖI DẬY";
+                else $("mode").textContent = "⛈️ STORM MODE";
+            }
+        }
+
+        function spawnPortal(type = "enter") {
+            portal = {
+                // Cổng vào xuất hiện ngay gần chim khi chạm mốc 30/60/90...
+                // để map phụ thực sự bắt đầu đúng mốc điểm, không bị trễ vài cột.
+                x: type === "enter" ? bird.x + 105 : W + 50,
+                y: H / 2 - 30,
+                radius: 40,
+                angle: 0,
+                type: type
+            };
+        }
+
+        function spawnBat() {
+            bats.push({
+                x: W + 30,
+                y: 50 + Math.random() * (H - GROUND - 100),
+                speed: 3 + Math.random() * 2.5,
+                wingPhase: Math.random() * Math.PI * 2,
+                size: 22 + Math.random() * 8
+            });
+        }
+
+        function spawnPickup() {
+            if (batMode) return false;
+            const candidates = pipes.filter(p => p.x > bird.x + 35 && !p.pickupMade && p.x < W - 20);
+            if (candidates.length === 0) return false;
+            const p = candidates[0];
+            p.pickupMade = true;
+
+            const rand = Math.random() * 100;
+            let t = null;
+
+            if (rand < 15) {
+                t = pickupTypes.find(item => item.type === "chicken");
+            } else if (rand < 30) {
+                t = pickupTypes.find(item => item.type === "apple");
+            } else if (rand < 45) {
+                t = pickupTypes.find(item => item.type === "slow");
+            } else if (rand < 60) {
+                t = pickupTypes.find(item => item.type === "magnet");
+            } else if (rand < 75) {
+                t = pickupTypes.find(item => item.type === "compass");
+            } else {
+                return false;
+            }
+
+            pickups.push({ x: p.x + PIPE_W / 2, y: p.top + p.gap / 2, pipeRef: p, type: t.type, icon: t.icon, label: t.label, duration: t.duration, age: 0, bob: Math.random() * Math.PI * 2, collected: false });
+            return true;
+        }
+
+        function burst(x, y, color) { for (let i = 0; i < 12; i++) { const a = Math.random() * Math.PI * 2, s = 1 + Math.random() * 3; particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 24, color }) } }
+
+        function collectPickup(p) {
+            achievementStats.pickups++;
+            checkAchievements();
+            const duration = Math.round(p.duration * birdDefs[selectedBird].duration);
+            if (p.type === "apple") {
+                effects.invincible = duration; burst(p.x, p.y, "#ff3158");
+                addFloatingText("✨ EXCELLENT! ✨", bird.x, bird.y - 25, "#ff3158");
+            } else if (p.type === "chicken") {
+                effects.tiny = duration; burst(p.x, p.y, "#ffad33");
+                addFloatingText("🍗 XUẤT SẮC! 🍗", bird.x, bird.y - 25, "#ff9d20");
+            } else if (p.type === "magnet") {
+                effects.magnet = duration; burst(p.x, p.y, "#bd68ff");
+                addFloatingText("🧲 EXCELLENT!", bird.x, bird.y - 25, "#bd68ff");
+            } else if (p.type === "slow") {
+                effects.slow = duration; burst(p.x, p.y, "#74e6ff");
+                addFloatingText("🐌 XUẤT SẮC!", bird.x, bird.y - 25, "#74e6ff");
+            } else if (p.type === "compass") {
+                effects.compass = duration; burst(p.x, p.y, "#ffcc00");
+                addFloatingText("🧭 EXCELLENT!", bird.x, bird.y - 25, "#ffcc00");
+            }
+        }
+
+        function updateBuffLabel() {
+            const active = [];
+            if (effects.invincible > 0) active.push("🍎 Bất Tử: " + (effects.invincible / 60).toFixed(1) + "s");
+            if (effects.tiny > 0) active.push("🍗 Thu Nhỏ: " + (effects.tiny / 60).toFixed(1) + "s");
+            if (effects.magnet > 0) active.push("🧲 Hút: " + (effects.magnet / 60).toFixed(1) + "s");
+            if (effects.slow > 0) active.push("🐌 Chậm: " + (effects.slow / 60).toFixed(1) + "s");
+            if (effects.compass > 0) active.push("🧭 La Bàn: " + (effects.compass / 60).toFixed(1) + "s");
+            $("buffStatus").textContent = active.length ? active.join("  |  ") : "✨ Sẵn sàng nhặt buff!";
+        }
+
+        function drawBackground() {
+            const sky = ctx.createLinearGradient(0, 0, 0, H);
+            if (batMode) {
+                sky.addColorStop(0, "#101a3a"); sky.addColorStop(.42, "#24336a"); sky.addColorStop(1, "#4a3b78");
+            } else if (currentMap === "fire") {
+                sky.addColorStop(0, "#1a0200"); sky.addColorStop(.5, "#4a0d03"); sky.addColorStop(1, "#b33600");
+            } else if (currentMap === "ice") {
+                sky.addColorStop(0, "#227093"); sky.addColorStop(.5, "#34ace0"); sky.addColorStop(1, "#d1f2eb");
+            } else if (currentMap === "hell") {
+                sky.addColorStop(0, "#0b0214"); sky.addColorStop(.5, "#240538"); sky.addColorStop(1, "#590d4e");
+            } else {
+                if (stormFade > 0) { sky.addColorStop(0, "#26344f"); sky.addColorStop(.55, "#607b92"); sky.addColorStop(1, "#b5d0d7") } else { sky.addColorStop(0, "#62d7ff"); sky.addColorStop(1, "#e0f9ff") }
+            }
+            ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+
+            if (batMode) {
+                // Soft moonlight and subtle stars for better visibility without clutter.
+                const moon = ctx.createRadialGradient(W - 72, 72, 8, W - 72, 72, 62);
+                moon.addColorStop(0, "rgba(255,245,190,.9)");
+                moon.addColorStop(.35, "rgba(210,225,255,.28)");
+                moon.addColorStop(1, "rgba(210,225,255,0)");
+                ctx.fillStyle = moon;
+                ctx.beginPath(); ctx.arc(W - 72, 72, 62, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = "rgba(255,255,255,.7)";
+                for (let i = 0; i < 22; i++) {
+                    const sx = (i * 83 + 31) % W;
+                    const sy = 18 + ((i * 47) % Math.max(40, H - GROUND - 35));
+                    const sr = 0.7 + ((i * 13) % 10) / 10;
+                    ctx.globalAlpha = .35 + .25 * Math.sin(frame * .03 + i);
+                    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+            }
+
+            if (!batMode) {
+                if (currentMap === "fire") {
+                    ctx.fillStyle = "#2b0300";
+                    ctx.beginPath(); ctx.moveTo(0, H - GROUND); ctx.lineTo(50, H - GROUND - 130); ctx.lineTo(120, H - GROUND); ctx.lineTo(200, H - GROUND - 160); ctx.lineTo(280, H - GROUND); ctx.lineTo(340, H - GROUND - 110); ctx.lineTo(W, H - GROUND); ctx.fill();
+
+                    ctx.fillStyle = "#ff3300";
+                    for (let i = 0; i < 3; i++) {
+                        let lx = 60 + i * 110 + Math.sin(frame * 0.05 + i) * 15;
+                        ctx.beginPath(); ctx.arc(lx, H - GROUND - 25, 12, Math.PI, 0); ctx.fill();
+                    }
+                    ctx.fillStyle = "rgba(255,140,0,.2)";
+                    for (let i = 0; i < 5; i++) { const x = ((i * 90 - frame * .8) % W + W) % W, y = 80 + i * 60; ctx.beginPath(); ctx.arc(x, y, 25, 0, Math.PI * 2); ctx.fill() }
+
+                } else if (currentMap === "ice") {
+                    ctx.fillStyle = "rgba(255,255,255,.3)";
+                    ctx.beginPath(); ctx.moveTo(0, H - GROUND); ctx.lineTo(80, H - GROUND - 120); ctx.lineTo(170, H - GROUND); ctx.lineTo(260, H - GROUND - 140); ctx.lineTo(W, H - GROUND); ctx.fill();
+                    ctx.fillStyle = "rgba(255,255,255,.6)";
+                    for (let i = 0; i < 4; i++) { const x = ((i * 100 - frame * .3) % (W + 80) + W + 80) % (W + 80) - 40, y = 50 + i * 60; ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI * 2); ctx.arc(x + 15, y - 10, 25, 0, Math.PI * 2); ctx.arc(x + 30, y, 18, 0, Math.PI * 2); ctx.fill() }
+
+                } else if (currentMap === "hell") {
+                    ctx.fillStyle = "#170224";
+                    ctx.beginPath(); ctx.moveTo(0, H - GROUND); ctx.lineTo(70, H - GROUND - 150); ctx.lineTo(100, H - GROUND - 140); ctx.lineTo(150, H - GROUND); ctx.lineTo(230, H - GROUND - 180); ctx.lineTo(310, H - GROUND); ctx.fill();
+                    ctx.fillStyle = "rgba(191,0,255,.25)";
+                    for (let i = 0; i < 6; i++) { const x = ((i * 75 - frame * .4) % W + W) % W, y = 40 + i * 55; ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.fill() }
+
+                } else {
+                    ctx.fillStyle = stormFade > 0 ? "rgba(61,76,96,.9)" : "rgba(255,255,255,.9)"; for (let i = 0; i < 5; i++) { const x = ((i * 105 - frame * .35) % (W + 100) + W + 100) % (W + 100) - 35, y = 55 + (i % 3) * 65; ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.arc(x + 20, y - 9, 21, 0, Math.PI * 2); ctx.arc(x + 41, y, 15, 0, Math.PI * 2); ctx.fill() }
+                }
+            }
+
+            if (batMode) ctx.fillStyle = "#110022";
+            else if (currentMap === "fire") ctx.fillStyle = "#3d0300";
+            else if (currentMap === "ice") ctx.fillStyle = "#74b9ff";
+            else if (currentMap === "hell") ctx.fillStyle = "#1b032e";
+            else ctx.fillStyle = stormFade > 0 ? "#607e79" : "#91e5a0";
+
+            ctx.beginPath(); ctx.moveTo(0, H - GROUND); for (let x = 0; x <= W; x += 6)ctx.lineTo(x, H - GROUND - 20 - Math.sin((x + frame * .6) / 40) * 14); ctx.lineTo(W, H - GROUND); ctx.fill();
+
+            if (stormFade > 0 && currentMap === "classic" && !batMode) { ctx.fillStyle = `rgba(15,20,42,${.48 * stormFade})`; ctx.fillRect(0, 0, W, H) }
+        }
+
+        function drawPipe(p) {
+            const bottomY = p.top + p.gap;
+            function onePipe(x, y, w, h, capAtBottom) {
+                if (h <= 0) return;
+                let mainC, lightC, darkC, borderC, capC, capLight;
+                if (currentMap === "fire") {
+                    mainC = "#cc3300"; lightC = "#ff6633"; darkC = "#991400"; borderC = "#4d0a00"; capC = "#e63900"; capLight = "#ff944d";
+                } else if (currentMap === "ice") {
+                    mainC = "#2b9bf4"; lightC = "#70bbfb"; darkC = "#1565c0"; borderC = "#0d3b66"; capC = "#1e88e5"; capLight = "#a5d8ff";
+                } else if (currentMap === "hell") {
+                    mainC = "#12061a"; lightC = "#4a0e35"; darkC = "#05010a"; borderC = "#ff1a40"; capC = "#240733"; capLight = "#ff4d79";
+                } else {
+                    mainC = stormFade > 0 ? "#258a55" : "#20b94a"; lightC = stormFade > 0 ? "#66b58b" : "#70f17b"; darkC = stormFade > 0 ? "#15543e" : "#138237"; borderC = stormFade > 0 ? "#183c3c" : "#08732e"; capC = stormFade > 0 ? "#318e60" : "#26c54f"; capLight = stormFade > 0 ? "#80bfa0" : "#81f58a";
+                }
+                ctx.fillStyle = mainC; ctx.fillRect(x, y, w, h);
+                ctx.fillStyle = lightC; ctx.fillRect(x + 7, y, 8, h);
+                ctx.fillStyle = darkC; ctx.fillRect(x + w - 8, y, 8, h);
+                ctx.strokeStyle = borderC; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h);
+
+                const capH = 19, extra = 7, capY = capAtBottom ? y + h - capH : y;
+                ctx.fillStyle = capC; ctx.fillRect(x - extra, capY, w + extra * 2, capH);
+                ctx.fillStyle = capLight; ctx.fillRect(x - extra + 5, capY + 3, 7, capH - 6);
+                ctx.strokeStyle = borderC; ctx.strokeRect(x - extra, capY, w + extra * 2, capH);
+            }
+            onePipe(p.x, 0, PIPE_W, p.top, true);
+            onePipe(p.x, bottomY, PIPE_W, H - GROUND - bottomY, false);
+        }
+
+        function drawPortal() {
+            if (!portal) return;
+            ctx.save();
+            ctx.translate(portal.x, portal.y);
+            portal.angle += 0.05;
+
+            const grad = ctx.createRadialGradient(0, 0, 5, 0, 0, portal.radius + 15);
+            grad.addColorStop(0, portal.type === "enter" ? "#bd68ff" : "#55efc4");
+            grad.addColorStop(0.6, portal.type === "enter" ? "#9c27b0" : "#00cec9");
+            grad.addColorStop(1, "transparent");
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(0, 0, portal.radius + 15, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.rotate(portal.angle);
+            ctx.strokeStyle = portal.type === "enter" ? "#ffffff" : "#ffeaa7";
+            ctx.lineWidth = 4;
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.arc(0, 0, portal.radius - i * 8, i, i + Math.PI, false);
+                ctx.stroke();
+            }
+
+            ctx.rotate(-portal.angle);
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 12px Arial";
+            ctx.textAlign = "center";
+            ctx.shadowColor = "#000";
+            ctx.shadowBlur = 4;
+            ctx.fillText(portal.type === "enter" ? "🌀 VÀO CỔNG" : "✨ TRỜI VỀ", 0, portal.radius + 22);
+
+            ctx.restore();
+        }
+
+        function drawBats() {
+            ctx.save();
+            for (const b of bats) {
+                ctx.save();
+                ctx.translate(b.x, b.y);
+                b.wingPhase += 0.25;
+                const wingY = Math.sin(b.wingPhase) * (b.size * 0.6);
+
+                ctx.fillStyle = "#111827";
+                ctx.strokeStyle = "#ffd166";
+                ctx.lineWidth = 2.2;
+
+                ctx.beginPath();
+                ctx.arc(0, 0, b.size * 0.35, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.quadraticCurveTo(-b.size * 0.8, -b.size * 0.9 + wingY, -b.size * 1.3, wingY);
+                ctx.quadraticCurveTo(-b.size * 0.6, b.size * 0.3, 0, 0);
+                ctx.quadraticCurveTo(b.size * 0.6, b.size * 0.3, b.size * 1.3, wingY);
+                ctx.quadraticCurveTo(b.size * 0.8, -b.size * 0.9 + wingY, 0, 0);
+                ctx.fill();
+
+                ctx.fillStyle = "#ff0000";
+                ctx.beginPath();
+                ctx.arc(-3, -2, 2, 0, Math.PI * 2);
+                ctx.arc(3, -2, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+            ctx.restore();
+        }
+
+        function drawBatWarning() {
+            if (!batMode || batIntroTimer <= 0) return;
+
+            // Nhấp nháy theo nhịp 0.2 giây để cảnh báo rõ nhưng không che kín màn hình.
+            const blink = Math.floor(batIntroTimer / 12) % 2 === 0;
+            ctx.save();
+            if (blink) {
+                ctx.fillStyle = "rgba(255, 35, 70, 0.18)";
+                ctx.fillRect(0, 0, W, H);
+            }
+
+            ctx.textAlign = "center";
+            ctx.shadowBlur = blink ? 18 : 0;
+            ctx.shadowColor = "#ff334f";
+            ctx.fillStyle = blink ? "#ff4757" : "#ffffff";
+            ctx.font = "bold 27px Arial";
+            ctx.fillText("⚠️ CẢNH BÁO DƠI ⚠️", W / 2, H / 2 - 20);
+            ctx.font = "bold 16px Arial";
+            ctx.fillText(`Chuẩn bị! ${(batIntroTimer / 60).toFixed(1)}s`, W / 2, H / 2 + 15);
+            ctx.shadowBlur = 0;
+            ctx.font = "13px Arial";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("Dơi sẽ xuất hiện ngay sau khi cảnh báo kết thúc", W / 2, H / 2 + 42);
+            ctx.restore();
+        }
+
+        function drawBossBar() {
+            if (!batMode) return;
+            const barW = 240, barH = 16, x = (W - barW) / 2, y = 38;
+            const progress = Math.max(0, batTimer / BAT_MODE_DURATION);
+
+            ctx.save();
+            ctx.fillStyle = "rgba(0,0,0,0.6)";
+            ctx.fillRect(x - 2, y - 2, barW + 4, barH + 4);
+            ctx.strokeStyle = "#ff4757";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - 2, y - 2, barW + 4, barH + 4);
+
+            ctx.fillStyle = "#ff4757";
+            ctx.fillRect(x, y, barW * progress, barH);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 11px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(`🦇 ĐẤU TRƯỜNG DƠI: ${(batTimer / 60).toFixed(1)}s`, W / 2, y + 12);
+            ctx.restore();
+        }
+
+        function drawCompassGuide() {
+            if (effects.compass <= 0) return;
+            const nextPipe = pipes.find(p => p.x + PIPE_W > bird.x);
+            if (!nextPipe) return;
+
+            const targetY = nextPipe.top + nextPipe.gap / 2;
+            ctx.save();
+            ctx.strokeStyle = "rgba(255, 204, 0, 0.75)";
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([6, 6]);
+            ctx.beginPath();
+            ctx.moveTo(bird.x, bird.y);
+            ctx.lineTo(nextPipe.x, targetY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = "#ffcc00";
+            ctx.beginPath();
+            ctx.arc(nextPipe.x, targetY, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawBird() {
+            const size = (effects.tiny > 0 ? BIRD_SIZE * .6 : BIRD_SIZE) * birdDefs[selectedBird].scale, birdDef = birdDefs[selectedBird]; ctx.save(); ctx.translate(bird.x, bird.y); ctx.rotate(Math.max(-.22, Math.min(.48, bird.vy * .028)));
+            // Không vẽ vòng tròn/aura quanh chim. Chỉ Hoàng Kim có ánh sáng VIP rất nhẹ.
+            if (selectedBird === "gold") {
+                ctx.save();
+                ctx.shadowColor = "rgba(255,215,70,.78)";
+                ctx.shadowBlur = 10;
+                ctx.globalAlpha = .72;
+                ctx.fillStyle = "#ffd95a";
+                for (let i = 0; i < 3; i++) {
+                    const a = frame * .025 + i * 2.1;
+                    const sx = Math.cos(a) * size * .66;
+                    const sy = Math.sin(a) * size * .52;
+                    ctx.beginPath(); ctx.arc(sx, sy, 1.6, 0, Math.PI * 2); ctx.fill();
+                }
+                ctx.restore();
+            }
+            ctx.fillStyle = "rgba(35,55,70,.18)"; ctx.beginPath(); ctx.ellipse(-1, size * .32, size * .42, size * .15, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = birdDef.beak; ctx.strokeStyle = "#542d20"; ctx.lineWidth = Math.max(1.5, size * .045); ctx.lineJoin = "round"; ctx.beginPath(); ctx.moveTo(-size * .36, size * .12); ctx.quadraticCurveTo(-size * .58, size * .02, -size * .62, -size * .08); ctx.quadraticCurveTo(-size * .59, size * .10, -size * .53, size * .23); ctx.quadraticCurveTo(-size * .39, size * .22, -size * .36, size * .12); ctx.closePath(); ctx.fill(); ctx.stroke();
+            ctx.strokeStyle = "#542d20"; ctx.lineWidth = Math.max(2, size * .065); ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(-size * .12, size * .34); ctx.lineTo(-size * .19, size * .49); ctx.lineTo(-size * .30, size * .52); ctx.moveTo(size * .05, size * .34); ctx.lineTo(size * .02, size * .47); ctx.lineTo(size * .13, size * .50); ctx.stroke(); ctx.strokeStyle = "#ef6a20"; ctx.lineWidth = Math.max(1.2, size * .035); ctx.beginPath(); ctx.moveTo(-size * .19, size * .48); ctx.lineTo(-size * .32, size * .53); ctx.moveTo(size * .02, size * .47); ctx.lineTo(size * .16, size * .51); ctx.stroke();
+            ctx.fillStyle = birdDef.body; ctx.strokeStyle = "#542d20"; ctx.lineWidth = Math.max(1.8, size * .055); ctx.beginPath(); ctx.ellipse(-size * .025, 0, size * .48, size * .43, -.08, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.fillStyle = birdDef.light; ctx.beginPath(); ctx.ellipse(-size * .06, -size * .26, size * .24, size * .11, -.30, Math.PI, Math.PI * 2); ctx.fill(); ctx.fillStyle = birdDef.belly; ctx.beginPath(); ctx.ellipse(-size * .03, size * .20, size * .30, size * .19, -.08, 0, Math.PI * 2); ctx.fill();
+            ctx.save(); ctx.translate(-size * .22, size * .08); const wingBeat = Math.sin(frame * .34) * .32 + (state === "playing" ? -.08 : 0); ctx.rotate(wingBeat); ctx.fillStyle = birdDef.wing; ctx.strokeStyle = "#542d20"; ctx.lineWidth = Math.max(1.5, size * .05); ctx.beginPath(); ctx.ellipse(0, size * .015, size * .31, size * .22, -.12, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.fillStyle = birdDef.wingLight; ctx.beginPath(); ctx.ellipse(-size * .025, -size * .045, size * .235, size * .115, -.14, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = "#eaa02c"; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(-size * .025, -size * .045, size * .235, size * .115, -.14, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+            ctx.fillStyle = "#fffdf7"; ctx.strokeStyle = "#542d20"; ctx.lineWidth = Math.max(1.6, size * .05); ctx.beginPath(); ctx.ellipse(size * .20, -size * .16, size * .19, size * .235, -.12, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#4b2b20"; ctx.beginPath(); ctx.ellipse(size * .255, -size * .13, size * .085, size * .13, -.10, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(size * .275, -size * .185, size * .035, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = birdDef.beak; ctx.strokeStyle = "#542d20"; ctx.lineWidth = Math.max(1.8, size * .055); ctx.beginPath(); ctx.moveTo(size * .34, -size * .015); ctx.quadraticCurveTo(size * .60, -size * .13, size * .72, size * .035); ctx.quadraticCurveTo(size * .67, size * .16, size * .36, size * .16); ctx.quadraticCurveTo(size * .31, size * .075, size * .34, -size * .015); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#ff7b32"; ctx.beginPath(); ctx.moveTo(size * .36, size * .075); ctx.quadraticCurveTo(size * .59, size * .055, size * .69, size * .085); ctx.quadraticCurveTo(size * .58, size * .20, size * .37, size * .16); ctx.closePath(); ctx.fill(); ctx.stroke(); drawHat(size); ctx.restore();
+        }
+
+        function getTitleVisual(id) {
+            const styles = {
+                flight_trainee: {tier:"pearl", border:"#9fcfe0", glow:"rgba(159,207,224,.55)"},
+                fire_warrior: {tier:"pearl", border:"#f0b48a", glow:"rgba(240,180,138,.58)"},
+                flight_master: {tier:"pearl", border:"#9fcfe0", glow:"rgba(159,207,224,.60)"},
+                mist_wanderer: {tier:"pearl", border:"#b7c9e8", glow:"rgba(183,201,232,.58)"},
+                buff_collector: {tier:"pearl", border:"#b9d7c5", glow:"rgba(185,215,197,.58)"},
+                classic_veteran: {tier:"pearl", border:"#d7c59b", glow:"rgba(215,197,155,.58)"},
+                flight_legend: {tier:"pearl", border:"#d9c47b", glow:"rgba(217,196,123,.65)"},
+                bat_hunter: {tier:"pearl", border:"#a8c7e8", glow:"rgba(168,199,232,.58)"},
+                hell_conqueror: {tier:"pearl", border:"#efb28d", glow:"rgba(239,178,141,.60)"},
+                nightmare: {tier:"pearl", border:"#e9a3a3", glow:"rgba(233,163,163,.62)"},
+                fashion_fan: {tier:"pearl", border:"#d0b4df", glow:"rgba(208,180,223,.58)"},
+                fashion_king: {tier:"pearl", border:"#9edbe7", glow:"rgba(158,219,231,.68)"},
+                ice_vip: {tier:"pearl", border:"#8fd9e8", glow:"rgba(143,217,232,.66)"}
+            };
+            return styles[id] || {tier:"pearl", border:"#bfd2dc", glow:"rgba(191,210,220,.55)"};
+        }
+
+        function drawTitleEffect(id, x, y, boxW, boxH) {
+            // Hiệu ứng nhỏ theo từng danh hiệu: nhẹ, sạch và không che chữ.
+            const t = frame;
+            ctx.save();
+            ctx.globalAlpha = .72;
+            if (id === "fire_warrior" || id === "hell_conqueror" || id === "nightmare") {
+                const emberColors = id === "nightmare" ? ["#e56b6f","#ff9b7a","#ffc46b"] : ["#ff7b32","#ffb52e","#ffe27a"];
+                for (let i=0;i<7;i++) {
+                    const px = x - boxW*.42 + ((i*37 + t*.65) % Math.max(8, boxW*.84));
+                    const py = y + boxH*.35 - ((i*9 + t*1.05) % 15);
+                    const r = 1.1 + (i%2)*.55;
+                    ctx.fillStyle = emberColors[i%emberColors.length];
+                    ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
+                }
+            } else if (id === "ice_vip") {
+                ctx.strokeStyle = "#8edff2"; ctx.lineWidth = 1.1;
+                for (let i=0;i<5;i++) {
+                    const px = x - boxW*.38 + ((i*29 + t*.28) % Math.max(8, boxW*.76));
+                    const py = y + ((i*13 + t*.45) % 30) - 15;
+                    const s = 2 + (i%2);
+                    ctx.beginPath(); ctx.moveTo(px-s,py); ctx.lineTo(px+s,py); ctx.moveTo(px,py-s); ctx.lineTo(px,py+s); ctx.stroke();
+                }
+            } else if (id === "mist_wanderer") {
+                ctx.fillStyle = "rgba(157,188,220,.75)";
+                for (let i=0;i<6;i++) {
+                    const px = x - boxW*.45 + ((i*31 + t*.22) % Math.max(8, boxW*.9));
+                    const py = y + Math.sin(t*.025+i)*5 + (i-3)*2;
+                    ctx.beginPath(); ctx.arc(px,py,1.7+(i%2),0,Math.PI*2); ctx.fill();
+                }
+            } else if (id === "buff_collector") {
+                ctx.fillStyle = "#8fd8bb";
+                for (let i=0;i<5;i++) {
+                    const a=t*.025+i*1.25, rx=boxW*.43, px=x+Math.cos(a)*rx, py=y+Math.sin(a)*10;
+                    ctx.fillRect(px-1,py-1,2,2);
+                }
+            } else if (id === "flight_legend" || id === "fashion_fan" || id === "fashion_king") {
+                ctx.fillStyle = id === "flight_legend" ? "#d7b84d" : "#c58bdc";
+                for (let i=0;i<5;i++) {
+                    const a=t*.018+i*1.25, px=x+Math.cos(a)*(boxW*.43), py=y+Math.sin(a)*(boxH*.62);
+                    ctx.beginPath(); ctx.arc(px,py,1.4+(i%2),0,Math.PI*2); ctx.fill();
+                }
+            } else if (id === "classic_veteran") {
+                ctx.fillStyle = "rgba(174,145,94,.58)";
+                for (let i=0;i<4;i++) {
+                    const px=x-boxW*.38+i*boxW*.24, py=y+boxH*.38-((t*.18+i*8)%8);
+                    ctx.fillRect(px,py,1.5,1.5);
+                }
+            } else if (id === "bat_hunter") {
+                ctx.fillStyle = "rgba(113,150,201,.7)";
+                for (let i=0;i<4;i++) {
+                    const a=t*.018+i*1.57, px=x+Math.cos(a)*(boxW*.42), py=y+Math.sin(a)*8;
+                    ctx.beginPath(); ctx.arc(px,py,1.4,0,Math.PI*2); ctx.fill();
+                }
+            } else {
+                ctx.fillStyle = "rgba(151,194,211,.58)";
+                for (let i=0;i<3;i++) {
+                    const px=x-boxW*.35+i*boxW*.35, py=y-12+((t*.16+i*7)%24);
+                    ctx.beginPath(); ctx.arc(px,py,1.2,0,Math.PI*2); ctx.fill();
+                }
+            }
+            ctx.restore();
+        }
+
+        function drawSelectedTitle() {
+            const t = achievementTitles[selectedTitle];
+            if (!t || !unlockedTitles.includes(selectedTitle)) return;
+
+            const visual = getTitleVisual(selectedTitle);
+            const label = `${t.icon} ${t.name}`;
+            ctx.save();
+            ctx.font = "bold 11px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            const padX = 9, textW = ctx.measureText(label).width;
+            const boxW = textW + padX * 2, boxH = 24;
+            const x = bird.x;
+            const y = bird.y - 41;
+
+            drawTitleEffect(selectedTitle, x, y, boxW, boxH);
+
+            // Đuôi nhỏ màu ngọc nhạt, đồng bộ với khung.
+            ctx.fillStyle = "#f7fbfd";
+            ctx.strokeStyle = visual.border;
+            ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            ctx.moveTo(x - 5, y + boxH / 2 - 1);
+            ctx.lineTo(x, y + boxH / 2 + 7);
+            ctx.lineTo(x + 5, y + boxH / 2 - 1);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Khung Light Pearl: nền trắng/ngọc nhạt, viền sáng, glow nhẹ.
+            ctx.shadowColor = visual.glow;
+            ctx.shadowBlur = 8;
+            const grad = ctx.createLinearGradient(x - boxW / 2, y, x + boxW / 2, y);
+            grad.addColorStop(0, "#ffffff");
+            grad.addColorStop(.5, "#f4fbfd");
+            grad.addColorStop(1, "#fffdf7");
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.roundRect(x - boxW / 2, y - boxH / 2, boxW, boxH, 9);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            ctx.strokeStyle = visual.border;
+            ctx.lineWidth = 1.8;
+            ctx.stroke();
+
+            ctx.strokeStyle = "rgba(255,255,255,.95)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(x - boxW / 2 + 2, y - boxH / 2 + 2, boxW - 4, boxH - 4, 7);
+            ctx.stroke();
+
+            ctx.fillStyle = "#29485a";
+            ctx.shadowColor = "rgba(255,255,255,.9)";
+            ctx.shadowBlur = 2;
+            ctx.fillText(label, x, y + .5);
+            ctx.shadowBlur = 0;
+            ctx.restore();
+        }
+
+        function drawPickups() {
+            for (const p of pickups) {
+                const bob = Math.sin(frame * .09 + p.bob) * 2, colors = { apple: "#ff3158", chicken: "#ff9d20", magnet: "#a64dff", slow: "#74e6ff", compass: "#ffcc00" };
+                ctx.save(); ctx.translate(p.x, p.y + bob);
+                ctx.shadowColor = colors[p.type] || "#74e6ff"; ctx.shadowBlur = 16;
+                ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(0, 0, 23, 0, Math.PI * 2); ctx.fill();
+                ctx.shadowBlur = 0; ctx.fillStyle = colors[p.type] || "#74e6ff";
+                ctx.beginPath(); ctx.arc(0, 0, 19, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.stroke();
+                ctx.font = "27px 'Apple Color Emoji','Segoe UI Emoji',Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.fillText(p.icon, 0, 1); ctx.restore();
+            }
+        }
+
+        function drawFloatingTexts() {
+            ctx.save();
+            ctx.font = "bold 18px Arial";
+            ctx.textAlign = "center";
+            for (const ft of floatingTexts) {
+                ctx.fillStyle = ft.color;
+                ctx.globalAlpha = Math.max(0, ft.alpha);
+                ctx.shadowColor = "#000";
+                ctx.shadowBlur = 4;
+                ctx.fillText(ft.text, ft.x, ft.y);
+            }
+            ctx.restore();
+        }
+
+        function drawFeathers() {
+            ctx.save();
+            for(const f of feathers){
+                ctx.save(); ctx.translate(f.x,f.y); ctx.rotate(f.angle); ctx.globalAlpha=Math.max(0,f.life/45); const t=f.type||"feather";
+                if(t==="heart"){ctx.fillStyle="#ff4f81";ctx.font="15px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("♥",0,0)}
+                else if(t==="drop"){ctx.fillStyle="#51c9ff";ctx.beginPath();ctx.moveTo(0,-7);ctx.quadraticCurveTo(7,1,0,7);ctx.quadraticCurveTo(-7,1,0,-7);ctx.fill()}
+                else if(t==="star"){ctx.fillStyle="#ffd84d";ctx.font="16px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("★",0,0)}
+                else if(t==="fire"){ctx.fillStyle=Math.random()>.5?"#ff4b00":"#ffd23f";ctx.font="16px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("♦",0,0)}
+                else if(t==="sparkle"){ctx.strokeStyle="#fff3a6";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-5,0);ctx.lineTo(5,0);ctx.moveTo(0,-5);ctx.lineTo(0,5);ctx.stroke()}
+                else if(t==="petal"){ctx.fillStyle="#ff9fcb";ctx.beginPath();ctx.ellipse(0,0,5,2.8,.5,0,Math.PI*2);ctx.fill()}
+                else if(t==="hell"){ctx.fillStyle=Math.random()>.5?"#ff2b69":"#9c35ff";ctx.font="15px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("☠",0,0)}
+                else {ctx.fillStyle=f.color;ctx.strokeStyle="#542d20";ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(0,0,6,2.5,0,0,Math.PI*2);ctx.fill();ctx.stroke()}
+                ctx.restore();
+            }
+            ctx.restore();
+        }
+        function drawHat(size){
+            if(selectedHat==="none")return; const h=selectedHat; ctx.save(); ctx.lineJoin="round"; ctx.lineCap="round";
+            if(h==="straw"){ctx.fillStyle="#e9bd45";ctx.strokeStyle="#8a5b20";ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(-size*.03,-size*.48,size*.48,size*.11,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle="#d99f2d";ctx.fillRect(-size*.27,-size*.72,size*.48,size*.25);ctx.strokeRect(-size*.27,-size*.72,size*.48,size*.25)}
+            else if(h==="helmet"){ctx.fillStyle="#6f7d86";ctx.strokeStyle="#33434c";ctx.lineWidth=2;ctx.beginPath();ctx.arc(-size*.03,-size*.34,size*.43,Math.PI,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillRect(-size*.48,-size*.39,size*.9,size*.10);ctx.strokeRect(-size*.48,-size*.39,size*.9,size*.10)}
+            else if(h==="cap"){ctx.fillStyle="#3187e8";ctx.strokeStyle="#164b8f";ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(-size*.03,-size*.36,size*.36,Math.PI,Math.PI*2);ctx.fill();ctx.stroke();ctx.beginPath();ctx.ellipse(size*.25,-size*.29,size*.30,size*.07,.1,0,Math.PI*2);ctx.fill();ctx.stroke()}
+            else if(h==="crown"){ctx.fillStyle="#ffd84a";ctx.strokeStyle="#9b6d00";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-size*.35,-size*.38);ctx.lineTo(-size*.30,-size*.70);ctx.lineTo(-size*.05,-size*.48);ctx.lineTo(size*.12,-size*.72);ctx.lineTo(size*.25,-size*.45);ctx.lineTo(size*.38,-size*.63);ctx.lineTo(size*.34,-size*.34);ctx.closePath();ctx.fill();ctx.stroke()}
+            else if(h==="cowboy"){ctx.fillStyle="#a56a2a";ctx.strokeStyle="#623c18";ctx.lineWidth=1.6;ctx.beginPath();ctx.ellipse(-size*.02,-size*.48,size*.52,size*.12,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(-size*.30,-size*.48);ctx.quadraticCurveTo(-size*.25,-size*.78,-size*.05,-size*.70);ctx.quadraticCurveTo(size*.18,-size*.80,size*.28,-size*.48);ctx.closePath();ctx.fill();ctx.stroke()}
+            else if(h==="pumpkin"){
+                ctx.save();
+                ctx.fillStyle="#ff7b24"; ctx.strokeStyle="#8f3d16"; ctx.lineWidth=Math.max(1.2,size*.035);
+                ctx.beginPath();
+                ctx.moveTo(-size*.39,-size*.42);
+                ctx.quadraticCurveTo(-size*.45,-size*.64,-size*.25,-size*.72);
+                ctx.quadraticCurveTo(-size*.08,-size*.79,size*.03,-size*.70);
+                ctx.quadraticCurveTo(size*.22,-size*.80,size*.36,-size*.62);
+                ctx.quadraticCurveTo(size*.47,-size*.43,size*.31,-size*.28);
+                ctx.quadraticCurveTo(size*.02,-size*.16,-size*.27,-size*.25);
+                ctx.quadraticCurveTo(-size*.38,-size*.29,-size*.39,-size*.42);
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.strokeStyle="#c9571e"; ctx.lineWidth=Math.max(1,size*.025);
+                for(const dx of [-.20,-.07,.08,.21]){
+                    ctx.beginPath(); ctx.moveTo(size*dx,-size*.69); ctx.quadraticCurveTo(size*(dx-.04),-size*.45,size*(dx+.01),-size*.27); ctx.stroke();
+                }
+                ctx.fillStyle="#2f7f3c"; ctx.strokeStyle="#1e5a2a";
+                ctx.beginPath(); ctx.roundRect(-size*.06,-size*.84,size*.12,size*.18,size*.03); ctx.fill(); ctx.stroke();
+                ctx.fillStyle="#2a1720"; ctx.beginPath();
+                ctx.moveTo(-size*.18,-size*.46); ctx.lineTo(-size*.07,-size*.52); ctx.lineTo(-size*.02,-size*.43); ctx.lineTo(-size*.14,-size*.39); ctx.closePath(); ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(size*.08,-size*.43); ctx.lineTo(size*.15,-size*.52); ctx.lineTo(size*.25,-size*.46); ctx.lineTo(size*.17,-size*.39); ctx.closePath(); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(-size*.17,-size*.30); ctx.quadraticCurveTo(size*.02,-size*.20,size*.20,-size*.31); ctx.stroke();
+                ctx.restore();
+            }
+            else if(h==="devil"){ctx.fillStyle="#d51d48";ctx.strokeStyle="#671024";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-size*.30,-size*.48);ctx.lineTo(-size*.38,-size*.78);ctx.lineTo(-size*.08,-size*.57);ctx.closePath();ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(size*.12,-size*.57);ctx.lineTo(size*.40,-size*.80);ctx.lineTo(size*.32,-size*.45);ctx.closePath();ctx.fill();ctx.stroke()}
+            else if(h==="witch"){
+                ctx.fillStyle="#4b2a6d"; ctx.strokeStyle="#2b173f"; ctx.lineWidth=Math.max(1.2,size*.035);
+                ctx.beginPath(); ctx.ellipse(-size*.02,-size*.38,size*.50,size*.11,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-size*.27,-size*.40); ctx.quadraticCurveTo(-size*.18,-size*.70,-size*.02,-size*.92); ctx.quadraticCurveTo(size*.14,-size*.70,size*.28,-size*.40); ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.strokeStyle="#d9a83b"; ctx.lineWidth=Math.max(1,size*.028); ctx.beginPath(); ctx.moveTo(-size*.22,-size*.43); ctx.quadraticCurveTo(0,-size*.35,size*.23,-size*.43); ctx.stroke();
+            }
+            else if(h==="ninja"){
+                ctx.fillStyle="#252238"; ctx.strokeStyle="#141321"; ctx.lineWidth=Math.max(1.2,size*.03);
+                ctx.beginPath(); ctx.moveTo(-size*.42,-size*.34); ctx.quadraticCurveTo(-size*.10,-size*.60,size*.40,-size*.34); ctx.lineTo(size*.30,-size*.08); ctx.quadraticCurveTo(0,size*.02,-size*.38,-size*.08); ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.fillStyle="#d8a16d"; ctx.beginPath(); ctx.ellipse(size*.18,-size*.16,size*.16,size*.11,0,0,Math.PI*2); ctx.fill();
+                ctx.strokeStyle="#8f2946"; ctx.lineWidth=Math.max(1,size*.035); ctx.beginPath(); ctx.moveTo(size*.18,-size*.04); ctx.quadraticCurveTo(size*.44,size*.10,size*.53,size*.25); ctx.stroke();
+            }
+            else if(h==="santa"){
+                ctx.fillStyle="#e83b48"; ctx.strokeStyle="#8d1f2a"; ctx.lineWidth=Math.max(1.2,size*.035);
+                ctx.beginPath(); ctx.ellipse(-size*.02,-size*.40,size*.47,size*.11,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-size*.30,-size*.40); ctx.quadraticCurveTo(-size*.22,-size*.72,size*.04,-size*.88); ctx.quadraticCurveTo(size*.13,-size*.62,size*.30,-size*.48); ctx.quadraticCurveTo(size*.08,-size*.39,-size*.30,-size*.40); ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.fillStyle="#fff8f2"; ctx.strokeStyle="#c9b6ad"; ctx.beginPath(); ctx.ellipse(-size*.01,-size*.86,size*.12,size*.10,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.fillStyle="#fff8f2"; ctx.beginPath(); ctx.ellipse(size*.02,-size*.43,size*.48,size*.07,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+            }
+            else if(h==="chef"){
+                ctx.fillStyle="#fffaf2"; ctx.strokeStyle="#8c7f78"; ctx.lineWidth=Math.max(1.2,size*.032);
+                ctx.beginPath(); ctx.ellipse(-size*.02,-size*.48,size*.43,size*.14,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.arc(-size*.23,-size*.55,size*.16,Math.PI,Math.PI*2); ctx.arc(-size*.02,-size*.64,size*.18,Math.PI,Math.PI*2); ctx.arc(size*.19,-size*.55,size*.16,Math.PI,Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.fillRect(-size*.34,-size*.48,size*.68,size*.18); ctx.strokeRect(-size*.34,-size*.48,size*.68,size*.18);
+                ctx.fillStyle="#e9c9b6"; ctx.fillRect(-size*.08,-size*.51,size*.16,size*.07);
+            }
+            else if(h==="sunglasses"){
+                ctx.fillStyle="rgba(35,24,55,.92)"; ctx.strokeStyle="#11101a"; ctx.lineWidth=Math.max(1.4,size*.035);
+                ctx.beginPath(); ctx.roundRect(size*.02,-size*.29,size*.30,size*.17,size*.05); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.roundRect(size*.34,-size*.29,size*.30,size*.17,size*.05); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(size*.31,-size*.21); ctx.lineTo(size*.35,-size*.21); ctx.stroke();
+                ctx.strokeStyle="rgba(255,255,255,.55)"; ctx.lineWidth=Math.max(1,size*.018);
+                ctx.beginPath(); ctx.moveTo(size*.08,-size*.25); ctx.lineTo(size*.18,-size*.25); ctx.moveTo(size*.40,-size*.25); ctx.lineTo(size*.50,-size*.25); ctx.stroke();
+            }
+            else if(h==="cat_ears"){
+                ctx.fillStyle="#f49a9f"; ctx.strokeStyle="#7a3d4c"; ctx.lineWidth=Math.max(1.4,size*.035);
+                ctx.beginPath(); ctx.moveTo(-size*.40,-size*.34); ctx.lineTo(-size*.28,-size*.78); ctx.lineTo(-size*.02,-size*.48); ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(size*.02,-size*.48); ctx.lineTo(size*.28,-size*.78); ctx.lineTo(size*.40,-size*.34); ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.fillStyle="#ffd0d4"; ctx.beginPath(); ctx.moveTo(-size*.28,-size*.45); ctx.lineTo(-size*.25,-size*.66); ctx.lineTo(-size*.10,-size*.49); ctx.closePath(); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(size*.10,-size*.49); ctx.lineTo(size*.25,-size*.66); ctx.lineTo(size*.28,-size*.45); ctx.closePath(); ctx.fill();
+            }
+            ctx.restore();
+        }
+        function drawGround() {
+            let groundC, topC, stripeC;
+            if (batMode) {
+                groundC = "#171a31"; topC = "#ff6b81"; stripeC = "#30345d";
+            } else if (currentMap === "fire") {
+                groundC = "#2b0300"; topC = "#ff4500"; stripeC = "#5c0a00";
+            } else if (currentMap === "ice") {
+                groundC = "#10314b"; topC = "#a0e7e5"; stripeC = "#1d5f8a";
+            } else if (currentMap === "hell") {
+                groundC = "#090114"; topC = "#e6005c"; stripeC = "#2d0547";
+            } else {
+                groundC = stormFade > 0 ? "#746c67" : "#d9b879"; topC = stormFade > 0 ? "#497a61" : "#45d65c"; stripeC = stormFade > 0 ? "#5b534f" : "#a78045";
+            }
+            ctx.fillStyle = groundC; ctx.fillRect(0, H - GROUND, W, GROUND);
+            ctx.fillStyle = topC; ctx.fillRect(0, H - GROUND, W, 10);
+            ctx.fillStyle = stripeC; for (let x = -(groundOffset % 28); x < W; x += 28) { ctx.fillRect(x, H - GROUND + 20, 14, 5); ctx.fillRect(x + 12, H - GROUND + 34, 12, 4) }
+        }
+
+        function updateStorm() {
+            if (batMode) return;
+            stormFade += ((storm ? 1 : 0) - stormFade) * .025; if (!storm) return;
+
+            if (currentMap === "classic") {
+                for (const r of weatherParticles) { r.x -= r.drift; r.y += r.speed; if (r.y > H || r.x < -20) { r.x = Math.random() * W + 20; r.y = -10 - Math.random() * 80; r.speed = 5 + Math.random() * 5 } }
+                if (lightning > 0) lightning--; else { nextLightning--; if (nextLightning <= 0) { lightning = 3 + Math.floor(Math.random() * 4); nextLightning = 130 + Math.random() * 240; boltPoints = []; let x = 65 + Math.random() * 220, y = 0; boltPoints.push({ x, y }); for (let i = 0; i < 6; i++) { x += (Math.random() - .5) * 45; y += 25 + Math.random() * 22; boltPoints.push({ x, y }) } } }
+            } else if (currentMap === "fire") {
+                for (const wp of weatherParticles) { wp.x += wp.drift; wp.y -= wp.speed * .8; if (wp.y < -10) { wp.y = H + 10; wp.x = Math.random() * W } }
+                if (lightning > 0) lightning--; else { nextLightning--; if (nextLightning <= 0) { lightning = 1 + Math.floor(Math.random() * 2); nextLightning = 180 + Math.random() * 220; } }
+            } else if (currentMap === "ice") {
+                for (const wp of weatherParticles) {
+                    wp.x += wp.drift;
+                    wp.y += wp.speed;
+                    if (wp.y > H || wp.x < -10 || wp.x > W + 10) {
+                        wp.y = -10;
+                        wp.x = Math.random() * W;
+                    }
+                }
+            } else if (currentMap === "hell") {
+                for (const wp of weatherParticles) { wp.x += wp.drift; wp.y -= wp.speed * .6; if (wp.y < -10) { wp.y = H + 10; wp.x = Math.random() * W } }
+                if (lightning > 0) lightning--; else { nextLightning--; if (nextLightning <= 0) { lightning = 1 + Math.floor(Math.random() * 2); nextLightning = 200 + Math.random() * 250; } }
+            }
+        }
+
+        function drawStorm() {
+            if (batMode || !storm || stormFade < .05) return;
+            ctx.save();
+            if (currentMap === "classic") {
+                ctx.strokeStyle = `rgba(220,238,255,${.45 * stormFade})`; ctx.lineWidth = 1.2; ctx.beginPath(); for (const r of weatherParticles) { ctx.moveTo(r.x, r.y); ctx.lineTo(r.x - r.drift * 2, r.y + r.len) } ctx.stroke();
+                if (lightning > 0) { const flash = lightning > 2 ? .65 : .25; ctx.fillStyle = `rgba(230,242,255,${flash * stormFade})`; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = `rgba(255,255,255,${.95 * stormFade})`; ctx.lineWidth = 3; ctx.shadowColor = "#d8eeff"; ctx.shadowBlur = 18; ctx.beginPath(); boltPoints.forEach((point, i) => { if (i === 0) ctx.moveTo(point.x, point.y); else ctx.lineTo(point.x, point.y) }); ctx.stroke(); }
+            } else if (currentMap === "fire") {
+                for (const wp of weatherParticles) { ctx.fillStyle = wp.color; ctx.globalAlpha = wp.alpha * stormFade; ctx.beginPath(); ctx.arc(wp.x, wp.y, wp.size, 0, Math.PI * 2); ctx.fill(); }
+                if (lightning > 0) { ctx.fillStyle = `rgba(255,69,0,${.2 * stormFade})`; ctx.fillRect(0, 0, W, H); }
+            } else if (currentMap === "ice") {
+                for (const wp of weatherParticles) { ctx.fillStyle = wp.color; ctx.globalAlpha = wp.alpha * stormFade; ctx.beginPath(); ctx.arc(wp.x, wp.y, wp.size, 0, Math.PI * 2); ctx.fill(); }
+            } else if (currentMap === "hell") {
+                for (const wp of weatherParticles) { ctx.fillStyle = wp.color; ctx.globalAlpha = wp.alpha * stormFade; ctx.beginPath(); ctx.arc(wp.x, wp.y, wp.size, 0, Math.PI * 2); ctx.fill(); }
+                if (lightning > 0) { ctx.fillStyle = `rgba(186,85,211,${.2 * stormFade})`; ctx.fillRect(0, 0, W, H); }
+            }
+            ctx.restore();
+        }
+
+        function drawParticles() { for (const p of particles) { ctx.globalAlpha = Math.max(0, p.life / 24); ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill() } ctx.globalAlpha = 1 }
+        function drawOverlay(title, subtitle) { ctx.fillStyle = "rgba(24,24,50,.78)"; ctx.fillRect(25, 175, W - 50, 145); ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.strokeRect(25, 175, W - 50, 145); ctx.textAlign = "center"; ctx.fillStyle = "#ffe66d"; ctx.font = "bold 25px Arial"; ctx.fillText(title, W / 2, 218); ctx.fillStyle = "#fff"; ctx.font = "15px Arial"; ctx.fillText(subtitle, W / 2, 250); ctx.font = "13px Arial"; ctx.fillText("Chạm màn hình để tiếp tục", W / 2, 280) }
+
+        function collide() {
+            const size = (effects.tiny > 0 ? BIRD_SIZE * .6 : BIRD_SIZE) * birdDefs[selectedBird].scale, r = size * .36;
+            if (bird.y - r < 0 || bird.y + r > H - GROUND) return true;
+
+            if (!batMode && !portalEntryFreeze) {
+                for (const p of pipes) { if (bird.x + r > p.x - 7 && bird.x - r < p.x + PIPE_W + 7) { if (bird.y - r < p.top || bird.y + r > p.top + p.gap) return true } }
+            }
+
+            if (batMode) {
+                for (const b of bats) {
+                    if (Math.hypot(bird.x - b.x, bird.y - b.y) < r + b.size * 0.6) return true;
+                }
+            }
+
+            return false;
+        }
+
+        function endGame() {
+            if (state === "over") return; state = "over"; paused = false; $("pauseBtn").disabled = true; $("pauseBtn").textContent = "⏸";
+            playDieSound();
+            if (score > best) { best = score; try { localStorage.setItem("flappyBossBest", String(best)) } catch (e) { } $("best").textContent = best; $("menuBest").textContent = best }
+            achievementStats.bestScore = Math.max(Number(achievementStats.bestScore)||0, score, best);
+            checkAchievements();
+            $("start").textContent = "CHƠI LẠI";
+            $("onlineFinalScore").textContent = score;
+            $("onlineSaveStatus").textContent = "☁️ Đang tự động cập nhật BXH...";
+            $("gameOverModal").style.display = "flex";
+            autoSyncScoreToLeaderboard(score);
+        }
+
+        function updateBuffs() { for (const key of Object.keys(effects)) { if (effects[key] > 0) effects[key]-- } updateBuffLabel() }
+
+        function update() {
+            frame++;
+            if (state === "playing") {
+                // Khi vừa vào màn dơi, cho chim một khoảng "bay tự do" 2.5s
+                // để người chơi kịp nhấn điều khiển; hết thời gian mới rơi bình thường.
+                // Sau khi thoát map phụ: 2.5 giây bay ổn định, vẫn điều khiển
+                // bằng Space/click bình thường. Hết 2.5 giây mới bật trọng lực lại.
+                if (postBatGraceTimer > 0) {
+                    postBatGraceTimer--;
+                    bird.vy *= 0.92;
+                    bird.y += bird.vy;
+                    bird.y = Math.max(45, Math.min(H - GROUND - 45, bird.y));
+                } else if (batMode && batIntroTimer > 0) {
+                    bird.y += bird.vy * 0.35;
+                    bird.vy *= 0.92;
+                    bird.y = Math.max(45, Math.min(H - GROUND - 45, bird.y));
+                } else {
+                    const hell = currentMap === "hell" ? getHellDifficulty() : null;
+                    bird.vy += hell ? hell.gravity : .32;
+                    bird.y += bird.vy;
+                }
+
+                let tierSpeed = 1.0;
+                if (score >= 50) tierSpeed = 1.35;
+                else if (score >= 30) tierSpeed = 1.15;
+
+                const hell = currentMap === "hell" ? getHellDifficulty() : null;
+                const baseSpeed = (2.1 + Math.min(score * .055, 1.5)) * tierSpeed * (hell ? hell.speedMult : 1);
+                const speed = (effects.slow > 0 || galaxySlowTimer > 0) ? baseSpeed * .62 : baseSpeed;
+                // Trong 2.5 giây sau khi thoát map dơi: đóng băng toàn bộ map chính.
+                // Chim vẫn bay/điều khiển được, nhưng cột, nền và tiến độ không chạy.
+                if (postBatGraceTimer <= 0) groundOffset += speed;
+
+                if (portalCooldown > 0) portalCooldown--;
+
+                if (
+                    score >= nextPortalScore &&
+                    !portalSpawnedFor100 &&
+                    !batMode &&
+                    portalCooldown <= 0
+                ) {
+                    portalSpawnedFor100 = true;
+                    portalEntryFreeze = true;
+
+                    // ĐÃ CHẠM MỐC 30/60/90...: khóa toàn bộ cột ngay lập tức.
+                    // Trong portalEntryFreeze, cột không chạy và không thể cộng điểm.
+                    spawnPortal("enter");
+
+                    // Mốc tiếp theo luôn là mốc kế tiếp:
+                    // 30 -> 60 -> 90 -> 120...
+                    nextPortalScore += PORTAL_SCORE_INTERVAL;
+                }
+
+                if (portal) {
+                    portal.x -= speed;
+
+                    // HÚT VÀO CỔNG: khi cổng đến gần, chim bị kéo mạnh về tâm cổng
+                    // để người chơi không thể cố tình né qua cổng.
+                    const portalDx = portal.x - bird.x;
+                    const portalDy = portal.y - bird.y;
+                    const portalDistance = Math.hypot(portalDx, portalDy);
+                    const portalMagnetRange = 190;
+
+                    if (portal.type === "enter" && portalDistance < portalMagnetRange) {
+                        const pull = portalDistance < 80 ? 0.34 : 0.18;
+                        bird.y += portalDy * pull;
+                        bird.vy += portalDy * 0.055;
+
+                        // Ở sát cổng thì khóa thẳng vào tâm để không thể lách qua.
+                        if (portalDistance < portal.radius + 18) {
+                            bird.x = portal.x;
+                            bird.y = portal.y;
+                            bird.vy = 0;
+                        }
+                    }
+
+                    if (Math.hypot(bird.x - portal.x, bird.y - portal.y) < portal.radius + 10) {
+                        if (portal.type === "enter") {
+                            batMode = true;
+                            batIntroTimer = 150; // 2.5 giây cảnh báo, chưa cho dơi xuất hiện
+                            batTimer = BAT_MODE_DURATION;
+                            batSpawnTimer = 999999;
+                            bats = [];
+                            pipes = [];
+                            pickups = [];
+                            portal = null;
+                            portalEntryFreeze = false;
+
+                            // Khi xuyên qua cổng, đưa chim về đúng vị trí xuất phát
+                            // thay vì giữ vị trí giữa màn hình do lực hút cổng.
+                            bird.x = 85;
+                            bird.y = 230;
+                            bird.vy = 0;
+
+                            $("mode").textContent = "⚠️ CẢNH BÁO DƠI...";
+                            addFloatingText("🌀 CHUYỂN MAP: CẢNH BÁO DƠI!", W / 2, 140, "#bd68ff");
+                            playMilestoneSound();
+                        } else if (portal.type === "exit") {
+                            batMode = false;
+                            bats = [];
+                            achievementStats.batClears++;
+                            checkAchievements();
+                            portal = null;
+                            portalCooldown = 600;
+                            portalSpawnedFor100 = false;
+                            portalEntryFreeze = false;
+
+                            // Xóa cột cũ để sau khi thoát không có cột nào đâm vào chim.
+                            // Cột mới chỉ được tạo sau khi hết 2.5 giây.
+                            pipes = [];
+                            pickups = [];
+
+                            // 150 frames = 2.5 giây bay ổn định sau khi về map chính.
+                            postBatGraceTimer = 150;
+                            bird.vy = 0;
+                            bird.y = Math.max(90, Math.min(H - GROUND - 90, bird.y));
+
+                            $("mode").textContent = currentMap === "fire" ? "🔥 MAP LỬA" : currentMap === "ice" ? "❄️ MAP BĂNG" : currentMap === "hell" ? "👿 Địa Ngục" : "☀️ TRỜI NẮNG";
+                            addFloatingText("✨ THOÁT HIỂM THÀNH CÔNG!", W / 2, 140, "#55efc4");
+                            playMilestoneSound();
+                        }
+                    } else if (portal.x < -60) {
+                        portal = null;
+                    }
+                }
+
+                if (batMode) {
+                    // Giai đoạn cảnh báo: 2.5 giây, chưa có dơi để người chơi kịp chuẩn bị.
+                    if (batIntroTimer > 0) {
+                        batIntroTimer--;
+                        bats = [];
+                        batSpawnTimer = 999999;
+                        if (batIntroTimer === 0) {
+                            $("mode").textContent = "🦇 ĐẤU TRƯỜNG DƠI (15S)";
+                            batSpawnTimer = 0;
+                            addFloatingText("🦇 DƠI XUẤT HIỆN!", W / 2, 140, "#ff4757");
+                            playMilestoneSound();
+                        }
+                    } else {
+                        batTimer--;
+                        batSpawnTimer--;
+                        if (batSpawnTimer <= 0) {
+                            spawnBat();
+                            batSpawnTimer = 30 + Math.floor(Math.random() * 25);
+                        }
+                    }
+
+                    for (const b of bats) {
+                        b.x -= b.speed;
+                    }
+                    bats = bats.filter(b => b.x > -40);
+
+                    if (batIntroTimer <= 0 && batTimer <= 0 && !portal) {
+                        spawnPortal("exit");
+                    }
+                } else {
+                    // Hết 2.5 giây mới cho cột chạy tiếp, giống cơ chế đứng yên của map dơi.
+                    if (postBatGraceTimer <= 0) {
+                        const hellNow = currentMap === "hell" ? getHellDifficulty() : null;
+                        const spawnGap = hellNow ? hellNow.spawnGap : 275;
+                        if (!portalEntryFreeze && (pipes.length === 0 || pipes[pipes.length - 1].x < W - spawnGap)) addPipe();
+                    }
+                    for (const p of pipes) {
+                        if (postBatGraceTimer > 0 || portalEntryFreeze) continue;
+                        p.x -= speed;
+                        if (p.moving) {
+                            const hellNow = currentMap === "hell" ? getHellDifficulty() : null;
+                            let oscMultiplier = hellNow ? hellNow.frequencyMult : (score >= 50 ? 1.6 : 1.0);
+                            p.phase += p.frequency * oscMultiplier;
+                            let currentAmplitude = hellNow ? p.amplitude : (score >= 50 ? p.amplitude * 1.35 : p.amplitude);
+                            p.top = p.baseTop + Math.sin(p.phase) * currentAmplitude;
+                            p.top = Math.max(35, Math.min(H - GROUND - p.gap - 35, p.top));
+                        }
+                        // Chỉ tính điểm khi map chính đang chạy bình thường.
+                        // Không tính điểm trong lúc vào map dơi, đang ở map dơi,
+                        // hoặc đang nghỉ 2.5 giây sau khi thoát map dơi.
+                        if (!portalEntryFreeze && !batMode && postBatGraceTimer <= 0 &&
+                            !p.passed && p.x + PIPE_W < bird.x) {
+                            p.passed = true;
+                            score++;
+                            $("score").textContent = score;
+                            achievementStats.totalColumns++;
+                            if(!achievementStats.mapColumns[currentMap]) achievementStats.mapColumns[currentMap]=0;
+                            achievementStats.mapColumns[currentMap]++;
+                            achievementStats.mapBest[currentMap]=Math.max(Number(achievementStats.mapBest[currentMap])||0,score);
+                            achievementStats.bestScore = Math.max(achievementStats.bestScore, score);
+                            if(currentMap === "hell"){ achievementStats.hellBest=Math.max(achievementStats.hellBest,score); }
+                            if(currentMap === "ice"){ achievementStats.iceColumns++; }
+                            if(currentMap === "fire"){ achievementStats.fireColumns++; }
+                            if(currentMap === "classic"){ achievementStats.classicColumns++; }
+                            checkAchievements();
+                            registerBirdSkillProgress();
+
+                            if (currentMap === "hell" && (score === 10 || score === 50)) {
+                                const label = score === 10 ? "🔥 ĐỊA NGỤC CẤP 2 — CỘT 10!" : "☠️ ĐỊA NGỤC CẤP 3 — CỘT 50!";
+                                addFloatingText(label, W / 2, 140, "#ff355e");
+                                playMilestoneSound();
+                                $("mode").textContent = score === 10 ? "👿 ĐỊA NGỤC CẤP 2" : "☠️ ĐỊA NGỤC CẤP 3";
+                            } else if (score > 0 && score % 10 === 0) {
+                                playMilestoneSound();
+                                addFloatingText(`🔥 GREAT! (${score} ĐIỂM) 🔥`, W / 2, 140, "#55efc4");
+                            } else {
+                                playScoreSound();
+                            }
+                        }
+                    }
+                    pipes = pipes.filter(p => p.x > -PIPE_W - 20);
+                }
+
+                pickups = pickups.filter(p => p.pipeRef && p.pipeRef.x > -PIPE_W - 30 && !p.collected);
+                if (postBatGraceTimer <= 0) {
+                    pickupTimer--; if (pickupTimer <= 0) { spawnPickup(); pickupTimer = 210 + Math.random() * 180 }
+                }
+                for (const p of pickups) {
+                    if (!p.pipeRef) continue; p.x = p.pipeRef.x + PIPE_W / 2; p.y = p.pipeRef.top + p.pipeRef.gap / 2; p.age++;
+                    if (effects.magnet > 0) { const dx = bird.x - p.x, dy = bird.y - p.y, dist = Math.hypot(dx, dy); if (dist < 145 && dist > 0) { p.x += dx / dist * 3.5; p.y += dy / dist * 3.5 } }
+                    const size = (effects.tiny > 0 ? BIRD_SIZE * .6 : BIRD_SIZE) * birdDefs[selectedBird].scale;
+                    if (Math.hypot(p.x - bird.x, p.y - bird.y) < size * .65 + 13) { collectPickup(p); p.collected = true }
+                }
+                pickups = pickups.filter(p => !p.collected && p.pipeRef && p.pipeRef.x > -PIPE_W - 30);
+
+                for (const ft of floatingTexts) {
+                    ft.y += ft.vy;
+                    ft.alpha -= 0.02;
+                }
+                floatingTexts = floatingTexts.filter(ft => ft.alpha > 0);
+
+                for (const f of feathers) {
+                    f.x += f.vx - (speed * 0.5);
+                    f.y += f.vy;
+                    f.angle += f.spin;
+                    f.life--;
+                }
+                feathers = feathers.filter(f => f.life > 0);
+
+                for (const p of particles) { p.x += p.vx; p.y += p.vy; p.life-- } particles = particles.filter(p => p.life > 0);
+                updateBuffs();
+                if (nightCooldown > 0) nightCooldown--;
+                if (nightDodgeGrace > 0) nightDodgeGrace--;
+                if (goldenSaveGrace > 0) goldenSaveGrace--;
+                if (galaxySlowTimer > 0) galaxySlowTimer--;
+
+                // Hoàng Kim: tự động kích hoạt sau mỗi 30 giây, bất tử 1.5 giây.
+                if (selectedBird === "gold" && state === "playing" && goldenCooldown > 0) {
+                    goldenCooldown--;
+                    if (goldenCooldown <= 0) {
+                        goldenShield = 90;
+                        goldenSaveGrace = 90;
+                        goldenCooldown = 1800;
+                        burst(bird.x, bird.y, "#ffe66d");
+                        addFloatingText("👑 KHIÊN VÀNG — BẤT TỬ 1,5S!", bird.x, bird.y - 28, "#fff0a3");
+                        playMilestoneSound();
+                    }
+                }
+                if (goldenShield > 0) goldenShield--;
+                if (selectedBird === "thunder" && thunderPending > 0) autoUseThunderSkill();
+                updateSkillUI();
+                updateStorm();
+                if (effects.invincible <= 0 && nightDodgeGrace <= 0 && goldenSaveGrace <= 0 && collide()) {
+                    if (selectedBird === "night" && nightCooldown <= 0 && !batMode && !portalEntryFreeze) saveFromCollision("night");
+                    else endGame();
+                } else if ((effects.invincible > 0 || nightDodgeGrace > 0 || goldenSaveGrace > 0) && bird.y + BIRD_SIZE * .3 > H - GROUND) { bird.y = H - GROUND - BIRD_SIZE * .3; bird.vy = Math.min(0, bird.vy) }
+            } else updateStorm();
+        }
+
+        function draw() {
+            drawBackground();
+            if (!batMode && !portalEntryFreeze) {
+                for (const p of pipes) drawPipe(p);
+                drawCompassGuide();
+                drawPickups();
+            }
+            drawPortal();
+            drawBats();
+            drawGround();
+            drawStorm();
+            drawParticles();
+            drawFeathers();
+            drawBird();
+            drawSelectedTitle();
+            drawBatWarning();
+            drawBossBar();
+            drawFloatingTexts();
+            if (state === "ready") drawOverlay("FLAPPY BIRD", "Sẵn sàng né cột chưa?");
+            else if (state === "paused") drawOverlay("⏸ ĐÃ TẠM DỪNG", "Bấm ▶ TIẾP TỤC để chơi tiếp");
+            else if (state === "over") drawOverlay("TOANG RỒI!", "Điểm của mày: " + score)
+        }
+
+        let lastTime = 0, accumulator = 0; const STEP = 1000 / 60;
+        function loop(timestamp) { if (!lastTime) lastTime = timestamp; let delta = timestamp - lastTime; lastTime = timestamp; delta = Math.min(delta, 100); accumulator += delta; while (accumulator >= STEP) { update(); accumulator -= STEP } draw(); requestAnimationFrame(loop) }
+        reset(); requestAnimationFrame(loop);
+    </script>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script>
+        "use strict";
+        const firebaseConfig = {
+            apiKey: "AIzaSyCq4iJEMxa2_wZWVz2IhCJ78bT0olOIiUk",
+            authDomain: "birdonline-c3241.firebaseapp.com",
+            projectId: "birdonline-c3241",
+            storageBucket: "birdonline-c3241.firebasestorage.app",
+            messagingSenderId: "227161459366",
+            appId: "1:227161459366:web:be0c02ee6a116b60b30267"
+        };
+        const list = document.getElementById("leaderboardList");
+        const modal = document.getElementById("gameOverModal");
+        const nameInput = document.getElementById("playerSetupInput");
+        const setupModal = document.getElementById("playerSetupModal");
+        const setupTitle = document.getElementById("playerSetupTitle");
+        const setupHint = document.getElementById("playerSetupHint");
+        const setupStatus = document.getElementById("playerSetupStatus");
+        const setupConfirm = document.getElementById("playerSetupConfirm");
+        const setupCancel = document.getElementById("playerSetupCancel");
+        const skipBtn = document.getElementById("skipOnlineBtn");
+        let db = null;
+        let setupMode = "start";
+        let pendingEnterAfterSetup = false;
+
+        function getSavedPlayerName(){
+            try { return String(localStorage.getItem("flappyLeaderboardName") || "").trim().slice(0,20); } catch(e) { return ""; }
+        }
+        function setSavedPlayerName(name){
+            try { localStorage.setItem("flappyLeaderboardName", String(name).trim().slice(0,20)); } catch(e){}
+        }
+        function openPlayerSetup(mode="start", afterSetup=false){
+            setupMode = mode; pendingEnterAfterSetup = !!afterSetup;
+            const current = getSavedPlayerName();
+            nameInput.value = current;
+            setupTitle.textContent = mode === "rename" ? "✏️ ĐỔI TÊN NGƯỜI CHƠI" : "👤 TÊN NGƯỜI CHƠI";
+            setupHint.textContent = mode === "rename" ? "Đổi tên tùy thích. Tên mới sẽ cập nhật ngay trên BXH." : "Nhập tên của mày. Tên này sẽ dùng cho BXH và game tự động lưu điểm.";
+            setupConfirm.textContent = mode === "rename" ? "💾 LƯU TÊN MỚI" : "✅ XÁC NHẬN TÊN";
+            setupCancel.textContent = mode === "rename" ? "HỦY" : "QUAY LẠI";
+            setupStatus.textContent = "";
+            setupModal.classList.add("show");
+            setTimeout(()=>{ nameInput.focus(); nameInput.select(); },30);
+        }
+        function closePlayerSetup(){ setupModal.classList.remove("show"); pendingEnterAfterSetup=false; }
+
+        async function updatePlayerName(newName){
+            const clean = String(newName || "").trim().slice(0,20);
+            if (!clean) throw new Error("Tên người chơi không được để trống");
+            setSavedPlayerName(clean);
+            const docId = (()=>{ try{return localStorage.getItem("flappyLeaderboardDocId")||"";}catch(e){return "";} })();
+            if (db && docId) {
+                const ref = db.collection("scores").doc(docId);
+                const snap = await ref.get();
+                if (snap.exists) {
+                    await ref.update({ name: clean, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                } else {
+                    try { localStorage.removeItem("flappyLeaderboardDocId"); } catch(e){}
+                }
+            }
+            try { nameInput.value = clean; } catch(e){}
+            if (typeof renderProfile === "function") renderProfile();
+            if (typeof loadLeaderboard === "function") await loadLeaderboard();
+            return clean;
+        }
+
+        async function autoSyncScoreToLeaderboard(scoreValue){
+            const player = getSavedPlayerName();
+            if (!player) {
+                $("onlineSaveStatus").textContent = "⚠️ Chưa có tên người chơi.";
+                return;
+            }
+            try {
+                await saveScore(player, scoreValue);
+                $("onlineSaveStatus").textContent = "✅ BXH đã tự động cập nhật!";
+                setTimeout(()=>{ $("gameOverModal").style.display = "none"; }, 700);
+            } catch(error) {
+                console.error("Auto save score:", error);
+                $("onlineSaveStatus").textContent = "❌ Chưa cập nhật được BXH. Game sẽ thử lại ở ván sau.";
+            }
+        }
+
+        try {
+            if (!window.firebase) throw new Error("Không tải được thư viện Firebase.");
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+        } catch (error) {
+            console.log("Firebase init:", error);
+            if (list) list.innerHTML = '<div class="lb-message">Không kết nối được Firebase.</div>';
+        }
+
+        async function loadLeaderboard() {
+            if (!list) return;
+            list.innerHTML = '<div class="lb-message">Đang tải bảng xếp hạng...</div>';
+            if (!db) { list.innerHTML = '<div class="lb-message">Firebase chưa kết nối được.</div>'; return; }
+            try {
+                const snapshot = await db.collection("scores").orderBy("score", "desc").limit(10).get();
+                if (snapshot.empty) { list.innerHTML = '<div class="lb-message">Chưa có điểm nào. Hãy là người đầu tiên!</div>'; return; }
+                list.innerHTML = ""; let rank = 1;
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const row = document.createElement("div");
+                    const main = document.createElement("div");
+                    const player = document.createElement("span");
+                    const nameWrap = document.createElement("div");
+                    const name = document.createElement("span");
+                    const title = document.createElement("span");
+                    const points = document.createElement("span");
+                    const topTitles = {1:"👑 VUA BẢNG XẾP HẠNG",2:"⚔️ Á QUÂN BẤT BẠI",3:"🔥 CAO THỦ TOP 3"};
+                    const rankIcon = rank === 1 ? "1" : rank === 2 ? "2" : rank === 3 ? "3" : String(rank);
+                    row.className = "lb-item" + (rank <= 3 ? " lb-top" + rank : "");
+                    main.className = "lb-main"; player.className = "lb-rank"; player.textContent = rankIcon;
+                    nameWrap.className = "lb-name-wrap"; name.className = "lb-name"; name.textContent = String(data.name || "Người chơi").slice(0,20); nameWrap.appendChild(name);
+                    if (data.title) {
+                        const playerTitle=document.createElement("span"); playerTitle.className="lb-player-title";
+                        const titleKey=Object.keys(achievementTitles).find(id=>achievementTitles[id].name===String(data.title));
+                        const visual=titleKey?getTitleVisual(titleKey):{border:"#bfd2dc",glow:"rgba(191,210,220,.45)"};
+                        playerTitle.textContent="("+String(data.title).slice(0,40)+")"; playerTitle.style.border="1px solid "+visual.border; playerTitle.style.boxShadow="0 0 0 1px rgba(255,255,255,.65) inset, 0 0 7px "+visual.glow; playerTitle.style.color=visual.border; nameWrap.appendChild(playerTitle);
+                    }
+                    if (topTitles[rank]) { title.className="lb-title"; title.textContent=topTitles[rank]; nameWrap.appendChild(title); }
+                    points.className="lb-score"; points.textContent=(Number(data.score)||0)+" điểm"; main.append(player,nameWrap); row.append(main,points); list.appendChild(row); rank++;
+                });
+            } catch(error) { console.log("Load leaderboard:",error); list.innerHTML='<div class="lb-message">Không tải được BXH.</div>'; }
+        }
+
+        async function saveScore(name, scoreValue) {
+            if (!db) throw new Error("Firebase chưa khởi tạo");
+            const savedName=String(name||"").trim().slice(0,20); if(!savedName) throw new Error("Tên người chơi không hợp lệ");
+            let score=Number(scoreValue)||0, docId="", oldScore=0, isNewRecord=false;
+            try { docId=localStorage.getItem("flappyLeaderboardDocId")||""; } catch(e){}
+            const currentTitle=(achievementTitles[selectedTitle]&&achievementTitles[selectedTitle].name)?achievementTitles[selectedTitle].name:"";
+            if(docId){
+                const ref=db.collection("scores").doc(docId), snap=await ref.get();
+                if(snap.exists){ const data=snap.data()||{}; oldScore=Number(data.score)||0; score=Math.max(oldScore,score); await ref.update({name:savedName,title:currentTitle,score,timestamp:firebase.firestore.FieldValue.serverTimestamp()}); }
+                else { docId=""; try{localStorage.removeItem("flappyLeaderboardDocId")}catch(e){} }
+            }
+            if(!docId){
+                const added=await db.collection("scores").add({name:savedName,title:currentTitle,score,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+                docId=added.id; isNewRecord=true;
+            }
+            try { localStorage.setItem("flappyLeaderboardName",savedName); localStorage.setItem("flappyLeaderboardScore",String(score)); localStorage.setItem("flappyLeaderboardDocId",docId); } catch(e){}
+            const snapshot=await db.collection("scores").orderBy("score","desc").limit(10).get(); let rank=0,index=0; snapshot.forEach(docSnap=>{index++;if(docSnap.id===docId)rank=index;});
+            if(rank>=1&&rank<=3){ achievementStats.leaderboardRank=rank; if(isNewRecord) achievementStats.rankCounts[rank]=(Number(achievementStats.rankCounts[rank])||0)+1; checkAchievements(); }
+            else { achievementStats.leaderboardRank=rank||0; saveAchievementData(); }
+            await loadLeaderboard(); return rank;
+        }
+
+        setupConfirm.addEventListener("click", async()=>{
+            const clean=nameInput.value.trim().slice(0,20); if(!clean){setupStatus.textContent="⚠️ Nhập tên trước nhé!"; nameInput.focus(); return;}
+            setupConfirm.disabled=true; setupStatus.textContent=setupMode==="rename"?"Đang cập nhật tên...":"Đang lưu tên...";
+            try {
+                await updatePlayerName(clean);
+                setupModal.classList.remove("show");
+                if(pendingEnterAfterSetup){ pendingEnterAfterSetup=false; enterSelectedMap(); }
+            } catch(error){ setupStatus.textContent="❌ "+(error.message||"Không cập nhật được tên."); }
+            finally { setupConfirm.disabled=false; }
+        });
+        setupCancel.addEventListener("click",()=>closePlayerSetup());
+        nameInput.addEventListener("keydown",e=>{ if(e.key==="Enter") setupConfirm.click(); });
+        skipBtn.addEventListener("click",()=>{ $("gameOverModal").style.display="none"; });
+        $("changePlayerNameBtn").addEventListener("click",()=>openPlayerSetup("rename",false));
+        loadLeaderboard();
+    </script>
+</body>
+</html>
