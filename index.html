@@ -1,0 +1,2014 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Flappy Bird — Maps & Enhanced Background Effects & Online Leaderboard</title>
+    <style>
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(180deg,#62d7ff 0%,#bdefff 62%,#e0f9ff 100%);
+            font-family: Arial,sans-serif;
+            color: #203653;
+            user-select: none
+        }
+
+        .game {
+            width: min(94vw,390px);
+            text-align: center
+        }
+
+        h1 {
+            margin: 8px 0;
+            color: #fff06b;
+            font-size: 28px;
+            text-shadow: 0 3px #278cc7,0 5px 12px #2476a8
+        }
+
+        .tag {
+            display: inline-block;
+            background: #ff4655;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 6px
+        }
+
+        .info {
+            display: flex;
+            justify-content: space-between;
+            margin: 6px 3px 8px;
+            font-weight: bold;
+            font-size: 15px
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%
+        }
+
+        canvas {
+            width: 100%;
+            display: block;
+            border: 4px solid white;
+            border-radius: 15px;
+            box-shadow: 0 0 25px #8b5cf6;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        #buffStatus {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.75);
+            color: #ffe66d;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 1.5px solid rgba(255,230,109,0.4);
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 10
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px
+        }
+
+            .btn-group button {
+                flex: 1;
+                margin-top: 0
+            }
+
+        button {
+            margin-top: 8px;
+            padding: 12px 20px;
+            border: 0;
+            border-radius: 12px;
+            background: #ffe66d;
+            color: #292044;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer
+        }
+
+        #start {
+            width: 100%
+        }
+
+        #pauseBtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 42px;
+            height: 42px;
+            margin: 0;
+            padding: 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(24, 10, 45, .82);
+            color: white;
+            border: 2px solid rgba(255,255,255,.75);
+            box-shadow: 0 4px 12px rgba(0,0,0,.28);
+            font-size: 20px;
+            line-height: 1;
+            z-index: 20;
+        }
+
+        #pauseBtn:not(:disabled):hover {
+            transform: scale(1.06);
+        }
+
+        #pauseBtn:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+        }
+
+        .tip {
+            font-size: 12px;
+            color: #555;
+            margin: 8px 0
+        }
+
+        #selectScreen {
+            width: min(94vw,380px);
+            padding: 10px 0 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px
+        }
+
+            #selectScreen h1 {
+                margin: 0
+            }
+
+        #menuMain { display:block; }
+
+        .menu-best {
+            color: #24425d;
+            font-weight: bold;
+            margin: 2px 0 4px;
+            font-size: 14px
+        }
+
+        .bird-select, .map-select {
+            padding: 10px;
+            border-radius: 16px;
+            background: rgba(255,255,255,.82);
+            color: #24425d;
+            box-shadow: 0 8px 24px rgba(36,100,140,.12)
+        }
+
+            .bird-select h2, .map-select h2 {
+                margin: 0 0 6px;
+                font-size: 14px
+            }
+
+        .bird-grid, .map-grid {
+            display: grid;
+            grid-template-columns: repeat(2,minmax(0,1fr));
+            gap: 6px
+        }
+
+        .bird-card, .map-card {
+            margin: 0;
+            padding: 6px 4px;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            background: rgba(255,255,255,.95);
+            color: #24425d;
+            font-size: 12px;
+            line-height: 1.2;
+            min-width: 0;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform .15s,border-color .15s
+        }
+
+            .bird-card:active, .map-card:active {
+                transform: scale(.97)
+            }
+
+            .bird-card.selected, .map-card.selected {
+                border-color: #1686c8;
+                background: #e4f7ff;
+                box-shadow: 0 0 0 2px rgba(22,134,200,.18)
+            }
+
+            .bird-card.locked {
+                opacity: .58;
+                cursor: not-allowed
+            }
+
+        .bird-preview {
+            display: block;
+            width: 70px;
+            height: 55px;
+            margin: 0 auto;
+            overflow: visible
+        }
+
+        .bird-card strong, .map-card strong {
+            display: block;
+            font-size: 12px;
+            margin-top: 2px
+        }
+
+        .bird-card small, .map-card small {
+            display: block;
+            font-size: 10px;
+            margin-top: 1px;
+            color: #557
+        }
+
+        .selection-note {
+            margin-top: 4px;
+            font-size: 11.5px;
+            min-height: 15px;
+            font-weight: bold;
+            color: #166088
+        }
+
+        #enterGame {
+            width: 100%;
+            margin-top: 2px;
+            padding: 12px 20px;
+            font-size: 17px;
+            box-shadow: 0 4px 0 #e6bd36
+        }
+
+
+        #fashionOpenBtn, #leaderboardOpenBtn { width:100%; }
+        #fashionOpenBtn { background:linear-gradient(135deg,#f7b2ff,#ffe66d); color:#39204f; box-shadow:0 4px 0 #d79bdc; }
+        #leaderboardOpenBtn { background:linear-gradient(135deg,#9edcff,#ffffff); color:#185d87; box-shadow:0 4px 0 #8bc5df; }
+        #titleOpenBtn { width:100%; background:linear-gradient(135deg,#fff3b0,#ffffff); color:#7a5b00; box-shadow:0 4px 0 #e4cf72; }
+        #titleScreen { display:none; width:100%; }
+        .title-panel { padding:12px; border-radius:18px; background:rgba(255,255,255,.90); box-shadow:0 10px 28px rgba(36,100,140,.15); }
+        .title-panel h2 { margin:0 0 6px; font-size:20px; color:#9a6d00; }
+        .title-subtitle { margin:0 0 10px; font-size:12px; color:#557; }
+        .title-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+        .title-card { border:2px solid #e8edf2; border-radius:14px; padding:10px 7px; background:#fff; cursor:pointer; min-height:92px; }
+        .title-card.selected { border-color:#f0c94a; box-shadow:0 0 0 2px rgba(240,201,74,.18); }
+        .title-card.locked { opacity:.55; filter:grayscale(.7); cursor:default; }
+        .title-card .big { display:block; font-size:28px; margin-bottom:4px; }
+        .title-card strong { display:block; font-size:12px; color:#30485b; }
+        .title-card small { display:block; margin-top:4px; font-size:10px; color:#718096; line-height:1.25; }
+        .title-note { margin:10px 0 0; padding:8px 10px; border-radius:12px; background:#fff8d9; color:#6d5700; font-size:12px; }
+        .title-back { width:100%; margin-top:10px; background:#e9f4fa; color:#24425d; }
+        #leaderboardScreen { display:none; width:100%; }
+        .leaderboard-panel { padding:12px; border-radius:18px; background:rgba(255,255,255,.90); box-shadow:0 10px 28px rgba(36,100,140,.15); }
+        .leaderboard-panel h2 { margin:0 0 6px; font-size:20px; color:#1686c8; }
+        .leaderboard-subtitle { margin:0 0 10px; font-size:12px; color:#557; }
+        .leaderboard-panel .leaderboard-box { margin-top:0; max-height:none; }
+        .leaderboard-back { width:100%; margin-top:10px; background:#e9f4fa; color:#24425d; }
+        #fashionScreen { display:none; width:100%; }
+        .fashion-panel { padding:12px; border-radius:18px; background:rgba(255,255,255,.88); box-shadow:0 10px 28px rgba(36,100,140,.15); }
+        .fashion-title { margin:0 0 5px; font-size:20px; color:#24425d; }
+        .fashion-subtitle { margin:0 0 12px; font-size:12px; color:#557; }
+        .fashion-menu-grid,.fashion-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+        .fashion-category,.fashion-card { margin:0; padding:10px 6px; border:2px solid transparent; border-radius:14px; background:#fff; color:#24425d; cursor:pointer; font-weight:800; transition:transform .15s,border-color .15s,box-shadow .15s; }
+        .fashion-category:active,.fashion-card:active { transform:scale(.97); }
+        .fashion-category { min-height:90px; font-size:14px; }
+        .fashion-category .big { display:block; font-size:34px; margin-bottom:5px; }
+        .fashion-card.selected { border-color:#b14cff; background:#f8efff; box-shadow:0 0 0 2px rgba(177,76,255,.12); }
+        .fashion-card .preview { height:58px; display:flex; align-items:center; justify-content:center; font-size:34px; }
+        .fashion-card strong { display:block; font-size:12px; }
+        .fashion-card small { display:block; margin-top:2px; color:#667; font-size:10px; }
+        .fashion-back { width:100%; margin-top:10px; background:#e9f4fa; color:#24425d; }
+        .fashion-note { min-height:18px; margin:8px 0 0; font-size:11.5px; font-weight:700; color:#6c3b91; }
+
+        #gameScreen {
+            display: none
+        }
+
+        .help {
+            margin: 10px 0 16px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,.58);
+            color: #24425d;
+            text-align: left;
+            font-size: 12px;
+            line-height: 1.7
+        }
+
+        .leaderboard-box {
+            margin-top: 6px;
+            padding: 8px;
+            border-radius: 12px;
+            background: rgba(255,255,255,.82);
+            color: #24425d;
+            text-align: left;
+            max-height: 160px;
+            overflow-y: auto
+        }
+
+            .leaderboard-box h3 {
+                margin: 0 0 6px;
+                text-align: center;
+                font-size: 13px;
+                color: #1686c8
+            }
+
+        .lb-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 4px 2px;
+            border-bottom: 1px dashed #b7d9e8;
+            font-size: 11.5px;
+            overflow-wrap: anywhere
+        }
+
+            .lb-item:last-child {
+                border-bottom: 0
+            }
+
+        .lb-rank {
+            min-width: 26px;
+            font-weight: bold
+        }
+
+        .lb-score {
+            font-weight: bold;
+            white-space: nowrap
+        }
+
+        .lb-message {
+            text-align: center;
+            font-size: 11.5px;
+            padding: 6px 0
+        }
+
+
+        #hellConfirmModal {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(18, 0, 30, .78);
+            backdrop-filter: blur(4px);
+        }
+
+        #hellConfirmModal .hell-modal-card {
+            width: min(100%, 350px);
+            padding: 24px 22px;
+            border-radius: 20px;
+            background: linear-gradient(180deg, #240036, #120018);
+            color: #fff;
+            text-align: center;
+            border: 2px solid #ff315f;
+            box-shadow: 0 0 35px rgba(255, 0, 90, .45), 0 15px 50px rgba(0,0,0,.5);
+            animation: hellPop .22s ease-out;
+        }
+
+        #hellConfirmModal h2 {
+            margin: 0 0 12px;
+            color: #ff3d6e;
+            font-size: 24px;
+            text-shadow: 0 0 12px rgba(255, 40, 100, .55);
+        }
+
+        #hellConfirmModal p {
+            margin: 8px 0;
+            line-height: 1.5;
+            font-weight: 700;
+        }
+
+        #hellConfirmModal .hell-warning {
+            margin: 14px 0 18px;
+            color: #ffd4df;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        #hellConfirmModal .hell-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        #hellConfirmModal button {
+            flex: 1;
+            margin: 0;
+            padding: 12px 10px;
+            border-radius: 12px;
+            border: 0;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        #hellAcceptBtn {
+            background: linear-gradient(135deg, #ff315f, #ff6a00);
+            color: white;
+        }
+
+        #hellCancelBtn {
+            background: rgba(255,255,255,.12);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,.2) !important;
+        }
+
+        @keyframes hellPop {
+            from { transform: scale(.88); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        #gameOverModal {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(15,30,55,.72)
+        }
+
+            #gameOverModal .modal-card {
+                width: min(100%,340px);
+                padding: 22px;
+                border-radius: 18px;
+                background: white;
+                color: #24425d;
+                text-align: center;
+                box-shadow: 0 12px 45px rgba(0,0,0,.3)
+            }
+
+            #gameOverModal h2 {
+                margin: 0 0 10px;
+                color: #1686c8;
+                font-size: 22px
+            }
+
+            #gameOverModal p {
+                margin: 8px 0
+            }
+
+        #playerName {
+            width: 100%;
+            margin: 12px 0 4px;
+            padding: 12px;
+            border: 2px solid #b7dff2;
+            border-radius: 10px;
+            outline: none;
+            font-size: 16px
+        }
+
+            #playerName:focus {
+                border-color: #1686c8
+            }
+
+        #gameOverModal button {
+            width: 100%;
+            margin-top: 8px
+        }
+
+        #saveOnlineBtn {
+            background: #1686c8;
+            color: white
+        }
+
+        #skipOnlineBtn {
+            background: #e9f4fa;
+            color: #24425d
+        }
+
+        #saveOnlineBtn:disabled {
+            opacity: .6;
+            cursor: wait
+        }
+    </style>
+</head>
+<body>
+    <div class="game" id="selectScreen">
+        <h1>🐤 FLAPPY BIRD</h1>
+        <div id="menuMain">
+        <div class="tag" id="menuMode">☀️ CHỌN CHIM & MAP TRƯỚC KHI CHƠI</div>
+        <p class="menu-best">🏆 Kỷ lục của mày: <b id="menuBest">0</b></p>
+
+        <section class="bird-select" aria-label="Chọn chim">
+            <h2>🐤 CHỌN CHIM</h2>
+            <div class="bird-grid" id="birdGrid">
+                <button class="bird-card selected" data-bird="yellow" type="button"><canvas class="bird-preview" data-preview="yellow" width="70" height="55"></canvas><strong>Vàng</strong><small>Cân bằng</small></button>
+                <button class="bird-card locked" data-bird="red" type="button"><canvas class="bird-preview" data-preview="red" width="70" height="55"></canvas><strong>Đỏ</strong><small>Nhỏ hơn · 20đ</small></button>
+                <button class="bird-card locked" data-bird="pink" type="button"><canvas class="bird-preview" data-preview="pink" width="70" height="55"></canvas><strong>Hồng</strong><small>Buff lâu · 40đ</small></button>
+                <button class="bird-card locked" data-bird="orange" type="button"><canvas class="bird-preview" data-preview="orange" width="70" height="55"></canvas><strong>Cam</strong><small>Nhảy cao · 60đ</small></button>
+            </div>
+            <div class="selection-note" id="selectionNote">🟡 Chim Vàng: cân bằng, dễ làm quen.</div>
+        </section>
+
+        <section class="map-select" aria-label="Chọn map">
+            <h2>🗺️ CHỌN MAP</h2>
+            <div class="map-grid" id="mapGrid">
+                <button class="map-card selected" data-map="classic" type="button"><strong>🌿 Cổ Điển</strong><small>Trời xanh, cột xanh lá</small></button>
+                <button class="map-card" data-map="fire" type="button"><strong>🔥 Lửa</strong><small>Nền đỏ cam, nham thạch</small></button>
+                <button class="map-card" data-map="ice" type="button"><strong>❄️ Băng</strong><small>Nền xanh lạnh, cột băng</small></button>
+                <button class="map-card" data-map="hell" type="button"><strong>👿 Địa Ngục</strong><small>Nền tím đen, cột đỏ</small></button>
+            </div>
+        </section>
+
+        <button id="enterGame" type="button">CHƠI NGAY ▶</button>
+        </div>
+
+        <button id="fashionOpenBtn" type="button">👕 THỜI TRANG</button>
+        <button id="leaderboardOpenBtn" type="button">🏆 BẢNG XẾP HẠNG</button>
+        <button id="titleOpenBtn" type="button">🏅 DANH HIỆU</button>
+        <div id="fashionScreen">
+            <div class="fashion-panel" id="fashionHome">
+                <h2 class="fashion-title">👕 THỜI TRANG</h2>
+                <p class="fashion-subtitle">Demo mở khóa toàn bộ — chọn riêng từng mục, game tự lưu lựa chọn.</p>
+                <div class="fashion-menu-grid">
+                    <button class="fashion-category" id="openHatSlide" type="button"><span class="big">🎩</span>MŨ CHO CHIM<small>Chọn phụ kiện đội đầu</small></button>
+                    <button class="fashion-category" id="openTrailSlide" type="button"><span class="big">✨</span>HIỆU ỨNG BAY<small>Chọn thứ bay phía sau</small></button>
+                </div>
+                <p class="fashion-note" id="fashionSummary">🎩 Mũ: Không · ✨ Hiệu ứng: Lông vũ</p>
+                <button class="fashion-back" id="fashionBackMenu" type="button">← QUAY LẠI GIAO DIỆN</button>
+            </div>
+            <div class="fashion-panel" id="hatSlide" style="display:none">
+                <h2 class="fashion-title">🎩 MŨ CHO CHIM</h2>
+                <p class="fashion-subtitle">Chọn một chiếc mũ. Lựa chọn được lưu riêng.</p>
+                <div class="fashion-grid" id="hatGrid"></div>
+                <p class="fashion-note" id="hatNote"></p>
+                <button class="fashion-back" id="backFromHat" type="button">← QUAY LẠI THỜI TRANG</button>
+            </div>
+            <div class="fashion-panel" id="trailSlide" style="display:none">
+                <h2 class="fashion-title">✨ HIỆU ỨNG BAY</h2>
+                <p class="fashion-subtitle">Chọn hiệu ứng để lại phía sau mỗi lần chim bay.</p>
+                <div class="fashion-grid" id="trailGrid"></div>
+                <p class="fashion-note" id="trailNote"></p>
+                <button class="fashion-back" id="backFromTrail" type="button">← QUAY LẠI THỜI TRANG</button>
+            </div>
+        </div>
+
+        <div id="titleScreen">
+            <div class="title-panel">
+                <h2>🏅 BỘ SƯU TẬP DANH HIỆU</h2>
+                <p class="title-subtitle">Danh hiệu mở bằng thành tích đặc biệt. Mốc test đang thấp để dễ thử.</p>
+                <div class="title-grid" id="titleGrid"></div>
+                <p class="title-note" id="titleNote">Đang chọn: 🐣 Chưa có danh hiệu</p>
+                <button class="title-back" id="titleBackMenu" type="button">← QUAY LẠI GIAO DIỆN</button>
+            </div>
+        </div>
+
+        <div id="leaderboardScreen">
+            <div class="leaderboard-panel">
+                <h2>🏆 BẢNG XẾP HẠNG</h2>
+                <p class="leaderboard-subtitle">Top 10 người chơi có điểm cao nhất.</p>
+                <section class="leaderboard-box">
+                    <div id="leaderboardList"><div class="lb-message">Đang tải bảng xếp hạng...</div></div>
+                </section>
+                <button class="leaderboard-back" id="leaderboardBackMenu" type="button">← QUAY LẠI GIAO DIỆN</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="game" id="gameScreen">
+        <h1>🐤 FLAPPY BIRD</h1>
+        <div class="tag" id="mode">☀️ TRỜI NẮNG</div>
+        <div class="info"><span>⭐ Điểm: <b id="score">0</b></span><span>🏆 Kỷ lục: <b id="best">0</b></span></div>
+        <div class="canvas-container">
+            <div id="buffStatus">✨ Đang chờ vật phẩm...</div>
+            <canvas id="game" width="360" height="540"></canvas>
+            <button id="pauseBtn" type="button" aria-label="Tạm dừng" title="Tạm dừng">⏸</button>
+        </div>
+        <button id="start">BẤM ĐỂ BAY</button>
+        <div class="btn-group">
+            <button id="backToMenuBtn" type="button">⚙️ ĐỔI CHIM & MAP</button>
+        </div>
+        <div class="tip">Bấm / chạm / nhấn SPACE để bay lên</div>
+        <div class="help"><b>🎁 Vật phẩm chiến thuật</b><br>🍎 Táo — bất tử 5s<br>🍗 Đùi gà — thu nhỏ 8s<br>🧲 Nam châm — hút vật phẩm<br>🐌 Chậm — giảm tốc<br>🧭 La Bàn — dự báo vị trí cột tiếp theo</div>
+    </div>
+
+
+    <div id="hellConfirmModal" role="dialog" aria-modal="true" aria-labelledby="hellConfirmTitle">
+        <div class="hell-modal-card">
+            <h2 id="hellConfirmTitle">👿 ĐỊA NGỤC</h2>
+            <p>ĐỊA NGỤC CHỈ DÀNH CHO NHỮNG NGƯỜI CHƠI KINH NGHIỆM.</p>
+            <div class="hell-warning">🔥 Tốc độ cao và độ khó sẽ tăng dần. Ngươi có chắc muốn bước vào?</div>
+            <div class="hell-actions">
+                <button id="hellCancelBtn" type="button">QUAY LẠI</button>
+                <button id="hellAcceptBtn" type="button">ĐỒNG Ý 😈</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="gameOverModal">
+        <div class="modal-card">
+            <h2>🐤 TOANG RỒI!</h2><p>Điểm của mày: <b id="onlineFinalScore">0</b></p>
+            <p>Nhập tên để lưu điểm lên bảng xếp hạng nhé!</p>
+            <input id="playerName" type="text" maxlength="20" placeholder="Tên của mày..." autocomplete="nickname">
+            <button id="saveOnlineBtn" type="button">🏆 LƯU ĐIỂM ONLINE</button>
+            <button id="skipOnlineBtn" type="button">BỎ QUA</button><p id="onlineSaveStatus" style="font-size:12px"></p>
+        </div>
+    </div>
+
+    <script>
+        "use strict";
+        const canvas = document.getElementById("game"), ctx = canvas.getContext("2d");
+        const W = canvas.width, H = canvas.height, GROUND = 48, PIPE_W = 58, BIRD_SIZE = 42;
+        // TEST: cổng đầu tiên sau 2 cột, các cổng tiếp theo sau mỗi 20 cột.
+        // Bản thật: đổi cả hai thành 40 để cổng xuất hiện ở 40, 80, 120...
+        const FIRST_PORTAL_SCORE = 30;
+        const PORTAL_SCORE_INTERVAL = 30;
+        const BAT_MODE_DURATION = 15 * 60; // 15 giây (15 * 60 frames)
+        const $ = id => document.getElementById(id);
+
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } else if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playScoreSound() {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
+            } catch (e) { }
+        }
+
+        function playMilestoneSound() {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08);
+                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.16);
+                gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.35);
+            } catch (e) { }
+        }
+
+        function playDieSound() {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.35);
+                gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.35);
+            } catch (e) { }
+        }
+
+        let best = 0; try { best = Number(localStorage.getItem("flappyBossBest") || 0) } catch (e) { }
+        $("best").textContent = best; $("menuBest").textContent = best;
+        let gameEntered = false;
+
+        let currentMap = "classic";
+        try { const savedMap = localStorage.getItem("flappyBirdMap"); if (savedMap) currentMap = savedMap; } catch (e) { }
+
+        const pickupTypes = [
+            { type: "apple", icon: "🍎", label: "BẤT TỬ", duration: 300 },
+            { type: "chicken", icon: "🍗", label: "THU NHỎ", duration: 480 },
+            { type: "magnet", icon: "🧲", label: "NAM CHÂM", duration: 360 },
+            { type: "slow", icon: "🐌", label: "CHẬM THỜI GIAN", duration: 200 },
+            { type: "compass", icon: "🧭", label: "LA BÀN", duration: 360 }
+        ];
+        let bird, pipes, pickups, particles, weatherParticles, floatingTexts, feathers;
+        let score, frame, state, groundOffset, pipeCount;
+        let paused = false;
+        let storm, stormFade, lightning, nextLightning, boltPoints;
+        let effects, pickupTimer;
+
+        // --- CÁC BIẾN CHO MINIGAME DƠI VÀ CÁNH CỔNG ---
+        let batMode = false;
+        let batTimer = 0;
+        let portal = null;
+        let bats = [];
+        let batSpawnTimer = 0;
+        let batIntroTimer = 0; // Thời gian cảnh báo trước khi dơi xuất hiện
+        let portalSpawnedFor100 = false;
+        let portalCooldown = 0;
+        let postBatGraceTimer = 0; // 2.5 giây bay ổn định sau khi thoát map phụ
+        let portalEntryFreeze = false; // khóa cột trong lúc chim vào cổng
+        let nextPortalScore = FIRST_PORTAL_SCORE;
+
+        const birdDefs = {
+            yellow: { name: "Vàng", unlock: 0, body: "#ffbf2f", light: "#ffdf62", belly: "#f5a92b", wing: "#f5a52c", wingLight: "#ffdf68", beak: "#f15a24", jump: -6.3, scale: 1, duration: 1 },
+            red: { name: "Đỏ", unlock: 20, body: "#e5232e", light: "#ff777e", belly: "#bd1723", wing: "#c91825", wingLight: "#ff8e94", beak: "#ff8a24", jump: -6.3, scale: .8, duration: 1 },
+            pink: { name: "Hồng", unlock: 40, body: "#ff4fa3", light: "#ffacd5", belly: "#e91e83", wing: "#e91e83", wingLight: "#ffd0e8", beak: "#ff8a45", jump: -6.3, scale: 1, duration: 1.35 },
+            orange: { name: "Cam", unlock: 60, body: "#ff8a32", light: "#ffc06a", belly: "#f07822", wing: "#ed7628", wingLight: "#ffd08a", beak: "#ed5427", jump: -7.05, scale: 1, duration: 1 }
+        };
+        const TEST_ALL_BIRDS = true; let selectedBird = "yellow";
+        const fashionHats = {
+            none:{name:"Không đội",icon:"🚫"},
+            straw:{name:"Mũ rơm",icon:"🌾"},
+            helmet:{name:"Mũ cối",icon:"🪖"},
+            cap:{name:"Mũ lưỡi trai",icon:"🧢"},
+            crown:{name:"Vương miện",icon:"👑"},
+            cowboy:{name:"Mũ cao bồi",icon:"🤠"},
+            pumpkin:{name:"Mũ bí ngô",icon:"🎃"},
+            devil:{name:"Sừng quỷ",icon:"😈"},
+            witch:{name:"Mũ phù thủy",icon:"🎩"},
+            ninja:{name:"Khăn ninja",icon:"🥷"},
+            santa:{name:"Mũ Noel",icon:"🎄"},
+            chef:{name:"Mũ đầu bếp",icon:"👨‍🍳"},
+            sunglasses:{name:"Kính đen",icon:"🕶️"},
+            cat_ears:{name:"Tai mèo",icon:"🐱"}
+        };
+        const fashionTrails = {
+            feather:{name:"Lông vũ",icon:"🪶"}, heart:{name:"Trái tim",icon:"❤️"}, drop:{name:"Giọt nước",icon:"💧"}, star:{name:"Ngôi sao",icon:"⭐"}, fire:{name:"Lửa",icon:"🔥"}, sparkle:{name:"Tia sáng",icon:"✨"}, petal:{name:"Cánh hoa",icon:"🌸"}, hell:{name:"Khói địa ngục",icon:"💀"}
+        };
+        const achievementTitles = {
+            bat_hunter:{name:"Kẻ Săn Dơi",icon:"🦇",desc:"Vượt qua 2 lần Đấu Trường Dơi",test:()=>achievementStats.batClears>=2},
+            hell_conqueror:{name:"Kẻ Chinh Phục Địa Ngục",icon:"🔥",desc:"Đạt 20 điểm trong Địa Ngục",test:()=>achievementStats.hellBest>=20},
+            nightmare:{name:"Ác Mộng",icon:"👹",desc:"Đạt 40 điểm trong Địa Ngục",test:()=>achievementStats.hellBest>=40},
+            fashion_fan:{name:"Tín Đồ Thời Trang",icon:"🎩",desc:"Dùng 5 món thời trang khác nhau",test:()=>achievementStats.fashionSeen.length>=5},
+            fashion_king:{name:"Ông Hoàng Thời Trang",icon:"👑",desc:"Dùng 10 món thời trang khác nhau",test:()=>achievementStats.fashionSeen.length>=10},
+            ice_vip:{name:"Chúa Tể Băng Giá",icon:"❄️",desc:"Vượt qua 1 cột ở Map Băng",test:()=>achievementStats.iceColumns>=1}
+        };
+        let achievementStats={batClears:0,hellBest:0,iceColumns:0,fashionSeen:[]};
+        let unlockedTitles=[]; let selectedTitle="";
+        try {
+            achievementStats=JSON.parse(localStorage.getItem("flappyAchievementStats")||"null")||achievementStats;
+            achievementStats.batClears=Number(achievementStats.batClears)||0; achievementStats.hellBest=Number(achievementStats.hellBest)||0; achievementStats.iceColumns=Number(achievementStats.iceColumns)||0;
+            achievementStats.fashionSeen=Array.isArray(achievementStats.fashionSeen)?achievementStats.fashionSeen:[];
+            unlockedTitles=JSON.parse(localStorage.getItem("flappyUnlockedTitles")||"[]").filter(id=>achievementTitles[id]);
+            selectedTitle=localStorage.getItem("flappySelectedTitle")||"";
+        } catch(e) {}
+        function saveAchievementData(){ try { localStorage.setItem("flappyAchievementStats",JSON.stringify(achievementStats)); localStorage.setItem("flappyUnlockedTitles",JSON.stringify(unlockedTitles)); localStorage.setItem("flappySelectedTitle",selectedTitle); } catch(e){} }
+        function checkAchievements(){
+            for(const [id,t] of Object.entries(achievementTitles)){
+                if(t.test() && !unlockedTitles.includes(id)){ unlockedTitles.push(id); if(typeof addFloatingText==="function") addFloatingText(`${t.icon} DANH HIỆU MỚI: ${t.name}!`,W/2,115,"#ffe66d"); if(typeof playMilestoneSound==="function") playMilestoneSound(); }
+            }
+            if(!selectedTitle && unlockedTitles.length) selectedTitle=unlockedTitles[0];
+            saveAchievementData(); if(typeof renderTitleCollection==="function") renderTitleCollection();
+        }
+        function markFashionSeen(kind,id){ const key=kind+":"+id; if(!achievementStats.fashionSeen.includes(key)){ achievementStats.fashionSeen.push(key); checkAchievements(); } }
+        function renderTitleCollection(){
+            const grid=$("titleGrid"); if(!grid) return;
+            grid.innerHTML=Object.entries(achievementTitles).map(([id,t])=>{ const open=unlockedTitles.includes(id); return `<button class="title-card ${open?'':'locked'} ${selectedTitle===id?'selected':''}" data-title="${id}" type="button"><span class="big">${open?t.icon:'🔒'}</span><strong>${open?t.name:'Danh hiệu ẩn'}</strong><small>${t.desc}</small></button>`; }).join("");
+            document.querySelectorAll("[data-title]").forEach(btn=>btn.addEventListener("click",()=>{ const id=btn.dataset.title; if(!unlockedTitles.includes(id)) return; selectedTitle=id; saveAchievementData(); renderTitleCollection(); }));
+            const t=achievementTitles[selectedTitle]; $("titleNote").textContent=t?`Đang chọn: ${t.icon} ${t.name}`:"Đang chọn: 🐣 Chưa có danh hiệu";
+        }
+        let selectedHat="none", selectedTrail="feather";
+        try { selectedHat=localStorage.getItem("flappyBirdHat")||"none"; selectedTrail=localStorage.getItem("flappyBirdTrail")||"feather"; if(!fashionHats[selectedHat])selectedHat="none"; if(!fashionTrails[selectedTrail])selectedTrail="feather"; } catch(e){}
+
+        let unlockedBirds = TEST_ALL_BIRDS ? Object.keys(birdDefs) : ["yellow"];
+        try { const saved = JSON.parse(localStorage.getItem("flappyBirdUnlocked") || "[]"); unlockedBirds = TEST_ALL_BIRDS ? Object.keys(birdDefs) : [...new Set(["yellow", ...saved])].filter(id => birdDefs[id]); const chosen = localStorage.getItem("flappyBirdSelected"); if (chosen && unlockedBirds.includes(chosen)) selectedBird = chosen } catch (e) { }
+
+        function addFloatingText(text, x, y, color = "#ffea79") {
+            floatingTexts.push({ text, x, y, alpha: 1, vy: -1.2, color });
+        }
+
+        function spawnFeathers(x, y) {
+            const count=2+Math.floor(Math.random()*2);
+            for(let i=0;i<count;i++) feathers.push({x:x-10+Math.random()*20,y:y+Math.random()*10,vx:-1.5-Math.random()*1.5,vy:.5+Math.random()*1.5,angle:Math.random()*Math.PI*2,spin:(Math.random()-.5)*.15,life:45,color:birdDefs[selectedBird].body,type:selectedTrail});
+        }
+
+        function drawBirdPreview(canvasEl, id) {
+            if (!canvasEl) return; const c = canvasEl.getContext("2d"), d = birdDefs[id], w = canvasEl.width, h = canvasEl.height; c.clearRect(0, 0, w, h); c.save(); c.translate(w / 2, h / 2 + 2); const size = 36 * d.scale; c.rotate(-.04);
+            c.fillStyle = "rgba(35,55,70,.16)"; c.beginPath(); c.ellipse(-1, size * .34, size * .42, size * .13, 0, 0, Math.PI * 2); c.fill();
+            c.fillStyle = d.beak; c.strokeStyle = "#542d20"; c.lineWidth = 1.8; c.lineJoin = "round"; c.beginPath(); c.moveTo(-size * .36, size * .12); c.quadraticCurveTo(-size * .58, size * .02, -size * .62, -size * .08); c.quadraticCurveTo(-size * .59, size * .10, -size * .53, size * .23); c.quadraticCurveTo(-size * .39, size * .22, -size * .36, size * .12); c.closePath(); c.fill(); c.stroke();
+            c.strokeStyle = "#542d20"; c.lineWidth = 2.1; c.lineCap = "round"; c.beginPath(); c.moveTo(-size * .12, size * .34); c.lineTo(-size * .19, size * .49); c.lineTo(-size * .30, size * .52); c.moveTo(size * .05, size * .34); c.lineTo(size * .02, size * .47); c.lineTo(size * .13, size * .50); c.stroke();
+            c.fillStyle = d.body; c.strokeStyle = "#542d20"; c.lineWidth = 2; c.beginPath(); c.ellipse(-size * .025, 0, size * .48, size * .43, -.08, 0, Math.PI * 2); c.fill(); c.stroke();
+            c.fillStyle = d.light; c.beginPath(); c.ellipse(-size * .06, -size * .26, size * .24, size * .11, -.30, Math.PI, Math.PI * 2); c.fill(); c.fillStyle = d.belly; c.beginPath(); c.ellipse(-size * .03, size * .20, size * .30, size * .19, -.08, 0, Math.PI * 2); c.fill();
+            c.save(); c.translate(-size * .22, size * .08); c.rotate(-.12); c.fillStyle = d.wing; c.strokeStyle = "#542d20"; c.lineWidth = 1.8; c.beginPath(); c.ellipse(0, size * .015, size * .31, size * .22, -.12, 0, Math.PI * 2); c.fill(); c.stroke(); c.fillStyle = d.wingLight; c.beginPath(); c.ellipse(-size * .025, -size * .045, size * .235, size * .115, -.14, 0, Math.PI * 2); c.fill(); c.restore();
+            c.fillStyle = "#fffdf7"; c.strokeStyle = "#542d20"; c.lineWidth = 1.8; c.beginPath(); c.ellipse(size * .20, -size * .16, size * .19, size * .235, -.12, 0, Math.PI * 2); c.fill(); c.stroke(); c.fillStyle = "#4b2b20"; c.beginPath(); c.ellipse(size * .255, -size * .13, size * .085, size * .13, -.10, 0, Math.PI * 2); c.fill(); c.fillStyle = "#fff"; c.beginPath(); c.arc(size * .275, -size * .185, size * .035, 0, Math.PI * 2); c.fill();
+            c.fillStyle = d.beak; c.strokeStyle = "#542d20"; c.lineWidth = 1.9; c.beginPath(); c.moveTo(size * .34, -size * .015); c.quadraticCurveTo(size * .60, -size * .13, size * .72, size * .035); c.quadraticCurveTo(size * .67, size * .16, size * .36, size * .16); c.quadraticCurveTo(size * .31, size * .075, size * .34, -size * .015); c.closePath(); c.fill(); c.stroke(); c.restore();
+        }
+        function refreshBirdPreviews() { document.querySelectorAll(".bird-preview").forEach(el => drawBirdPreview(el, el.dataset.preview)) }
+        function refreshSelectionUI() {
+            refreshBirdPreviews(); const savedBest = Math.max(best, score || 0);
+            for (const [id, def] of Object.entries(birdDefs)) { if ((TEST_ALL_BIRDS || savedBest >= def.unlock) && !unlockedBirds.includes(id)) unlockedBirds.push(id) }
+            try { localStorage.setItem("flappyBirdUnlocked", JSON.stringify(unlockedBirds)) } catch (e) { }
+
+            document.querySelectorAll(".bird-card").forEach(card => { const id = card.dataset.bird, def = birdDefs[id], unlocked = unlockedBirds.includes(id); card.classList.toggle("locked", !unlocked); card.classList.toggle("selected", id === selectedBird); const small = card.querySelector("small"); if (TEST_ALL_BIRDS) { if (id === "yellow") small.textContent = "Cân bằng · Thử màu"; else if (id === "red") small.textContent = "Nhỏ hơn · Thử màu"; else if (id === "pink") small.textContent = "Buff lâu · Thử màu"; else small.textContent = "Nhảy cao · Thử màu" } else if (!unlocked) small.textContent = "🔒 " + def.unlock + " điểm"; else if (id === "yellow") small.textContent = "Cân bằng · Mở sẵn"; else if (id === "red") small.textContent = "Nhỏ hơn · Đã mở"; else if (id === "pink") small.textContent = "Buff lâu · Đã mở"; else small.textContent = "Nhảy cao · Đã mở" });
+
+            document.querySelectorAll(".map-card").forEach(card => { const m = card.dataset.map; card.classList.toggle("selected", m === currentMap); });
+
+            const descriptions = { yellow: "🟡 Chim Vàng: cân bằng, dễ làm quen.", red: "🔴 Chim Đỏ: thân nhỏ hơn 20%, dễ lọt khe hơn.", pink: "🩷 Chim Hồng: mọi buff nhặt được kéo dài thêm 35%.", orange: "🟠 Chim Cam: mỗi lần chạm sẽ bật lên cao hơn." };
+            $("selectionNote").textContent = currentMap === "hell"
+                ? "☠️ ĐỊA NGỤC KHÔNG DÀNH CHO NGƯỜI YẾU TIM — tốc độ tăng dần, khe vẫn như map thường. Vào là xác định chiến! 🔥"
+                : descriptions[selectedBird];
+        }
+
+        function updateFashionSummary(){
+            $("fashionSummary").textContent=`🎩 Mũ: ${fashionHats[selectedHat].name} · ✨ Hiệu ứng: ${fashionTrails[selectedTrail].name}`;
+            $("hatNote").textContent=`Đang chọn: ${fashionHats[selectedHat].icon} ${fashionHats[selectedHat].name}`;
+            $("trailNote").textContent=`Đang chọn: ${fashionTrails[selectedTrail].icon} ${fashionTrails[selectedTrail].name}`;
+        }
+        function buildFashionGrid(){
+            $("hatGrid").innerHTML=Object.entries(fashionHats).map(([id,d])=>`<button class="fashion-card ${id===selectedHat?'selected':''}" data-hat="${id}" type="button"><div class="preview">${d.icon}</div><strong>${d.name}</strong><small>Mở khóa sẵn</small></button>`).join("");
+            $("trailGrid").innerHTML=Object.entries(fashionTrails).map(([id,d])=>`<button class="fashion-card ${id===selectedTrail?'selected':''}" data-trail="${id}" type="button"><div class="preview">${d.icon}</div><strong>${d.name}</strong><small>Mở khóa sẵn</small></button>`).join("");
+            document.querySelectorAll("[data-hat]").forEach(btn=>btn.addEventListener("click",()=>{selectedHat=btn.dataset.hat;markFashionSeen("hat",selectedHat);try{localStorage.setItem("flappyBirdHat",selectedHat)}catch(e){};buildFashionGrid();updateFashionSummary()}));
+            document.querySelectorAll("[data-trail]").forEach(btn=>btn.addEventListener("click",()=>{selectedTrail=btn.dataset.trail;markFashionSeen("trail",selectedTrail);try{localStorage.setItem("flappyBirdTrail",selectedTrail)}catch(e){};buildFashionGrid();updateFashionSummary()})); updateFashionSummary();
+        }
+        function showFashionSlide(slide){
+            $("menuMain").style.display="none";
+            $("fashionOpenBtn").style.display="none";
+            $("leaderboardOpenBtn").style.display="none";
+            $("leaderboardScreen").style.display="none";
+            $("titleScreen").style.display="none";
+            $("titleOpenBtn").style.display="none";
+            $("fashionScreen").style.display="block";
+            $("fashionHome").style.display=slide==="home"?"block":"none";
+            $("hatSlide").style.display=slide==="hat"?"block":"none";
+            $("trailSlide").style.display=slide==="trail"?"block":"none";
+            buildFashionGrid();
+            window.scrollTo({top:0,behavior:"smooth"});
+        }
+        function showLeaderboardSlide(){
+            $("menuMain").style.display="none";
+            $("fashionOpenBtn").style.display="none";
+            $("leaderboardOpenBtn").style.display="none";
+            $("fashionScreen").style.display="none";
+            $("titleScreen").style.display="none";
+            $("titleOpenBtn").style.display="none";
+            $("leaderboardScreen").style.display="block";
+            if(typeof loadLeaderboard==="function") loadLeaderboard();
+            window.scrollTo({top:0,behavior:"smooth"});
+        }
+        function showTitleSlide(){
+            $("menuMain").style.display="none"; $("fashionOpenBtn").style.display="none"; $("leaderboardOpenBtn").style.display="none"; $("titleOpenBtn").style.display="none";
+            $("fashionScreen").style.display="none"; $("leaderboardScreen").style.display="none"; $("titleScreen").style.display="block";
+            renderTitleCollection(); window.scrollTo({top:0,behavior:"smooth"});
+        }
+        function backToMainMenu(){
+            $("fashionScreen").style.display="none";
+            $("leaderboardScreen").style.display="none";
+            $("titleScreen").style.display="none";
+            $("fashionOpenBtn").style.display="block";
+            $("leaderboardOpenBtn").style.display="block";
+            $("titleOpenBtn").style.display="block";
+            $("menuMain").style.display="block";
+            window.scrollTo({top:0,behavior:"smooth"});
+        }
+        $("fashionOpenBtn").addEventListener("click",()=>showFashionSlide("home"));
+        $("leaderboardOpenBtn").addEventListener("click",showLeaderboardSlide);
+        $("titleOpenBtn").addEventListener("click",showTitleSlide);
+        $("titleBackMenu").addEventListener("click",backToMainMenu);
+        $("openHatSlide").addEventListener("click",()=>showFashionSlide("hat"));
+        $("openTrailSlide").addEventListener("click",()=>showFashionSlide("trail"));
+        $("backFromHat").addEventListener("click",()=>showFashionSlide("home"));
+        $("backFromTrail").addEventListener("click",()=>showFashionSlide("home"));
+        $("fashionBackMenu").addEventListener("click",backToMainMenu);
+        $("leaderboardBackMenu").addEventListener("click",backToMainMenu);
+        buildFashionGrid();
+        renderTitleCollection();
+
+        document.querySelectorAll(".bird-card").forEach(card => card.addEventListener("click", () => { const id = card.dataset.bird; if (!unlockedBirds.includes(id)) { $("selectionNote").textContent = "🔒 Cần đạt " + birdDefs[id].unlock + " điểm để mở Chim " + birdDefs[id].name + "."; return } selectedBird = id; try { localStorage.setItem("flappyBirdSelected", id) } catch (e) { } refreshSelectionUI() }));
+
+        function enterSelectedMap() {
+            gameEntered = true;
+            $("selectScreen").style.display = "none";
+            $("gameScreen").style.display = "block";
+            reset();
+            startGame();
+        }
+
+        document.querySelectorAll(".map-card").forEach(card => card.addEventListener("click", () => {
+            const chosenMap = card.dataset.map;
+            if (chosenMap === "hell") {
+                $("hellConfirmModal").style.display = "flex";
+                return;
+            }
+            currentMap = chosenMap;
+            try { localStorage.setItem("flappyBirdMap", currentMap) } catch (e) { }
+            refreshSelectionUI();
+        }));
+
+        $("hellCancelBtn").addEventListener("click", () => {
+            $("hellConfirmModal").style.display = "none";
+        });
+
+        $("hellAcceptBtn").addEventListener("click", () => {
+            currentMap = "hell";
+            try { localStorage.setItem("flappyBirdMap", currentMap) } catch (e) { }
+            $("hellConfirmModal").style.display = "none";
+            refreshSelectionUI();
+            enterSelectedMap();
+        });
+
+        function makeWeatherParticle() {
+            if (currentMap === "fire") {
+                return { x: Math.random() * W, y: Math.random() * H, size: 2 + Math.random() * 3.5, speed: 1.5 + Math.random() * 2, drift: (Math.random() - .5) * 1, color: Math.random() > .4 ? "#ff3300" : "#ffaa00", alpha: .5 + Math.random() * .3 };
+            } else if (currentMap === "ice") {
+                return { x: Math.random() * W, y: Math.random() * H, size: 1.5 + Math.random() * 3.5, speed: 1.2 + Math.random() * 2, drift: (Math.random() - .5) * 1.2, color: "#ffffff", alpha: .5 + Math.random() * .4 };
+            } else if (currentMap === "hell") {
+                return { x: Math.random() * W, y: Math.random() * H, size: 2 + Math.random() * 3.5, speed: 1.2 + Math.random() * 1.8, drift: (Math.random() - .5) * 1.2, color: Math.random() > .5 ? "#ff0066" : "#bf00ff", alpha: .4 + Math.random() * .4 };
+            } else {
+                return { x: Math.random() * W, y: Math.random() * H, len: 8 + Math.random() * 13, speed: 5 + Math.random() * 5, drift: 1.5 + Math.random() * 1.5 };
+            }
+        }
+
+        function reset() {
+            bird = { x: 85, y: 230, vy: 0 }; pipes = []; pickups = []; particles = []; floatingTexts = []; feathers = []; bats = [];
+            weatherParticles = Array.from({ length: 55 }, () => makeWeatherParticle());
+            score = 0; frame = 0; state = "ready"; paused = false; groundOffset = 0; pipeCount = 0; storm = false; stormFade = 0; lightning = 0; nextLightning = 160; boltPoints = []; effects = { invincible: 0, tiny: 0, magnet: 0, slow: 0, compass: 0 }; pickupTimer = 200;
+            batMode = false; batTimer = 0; batIntroTimer = 0; portal = null; portalSpawnedFor100 = false; portalCooldown = 0; postBatGraceTimer = 0; portalEntryFreeze = false; nextPortalScore = FIRST_PORTAL_SCORE;
+            $("score").textContent = "0"; $("start").textContent = "CHƠI NGAY"; $("pauseBtn").textContent = "⏸"; $("pauseBtn").disabled = true;
+            $("mode").textContent = currentMap === "fire" ? "🔥 MAP LỬA" : currentMap === "ice" ? "❄️ MAP BĂNG" : currentMap === "hell" ? "👿 MAP ĐỊA NGỤC" : "☀️ TRỜI NẮNG";
+            updateBuffLabel(); refreshSelectionUI();
+        }
+        function startGame() { if (!gameEntered) return; if (state === "over") reset(); state = "playing"; paused = false; $("pauseBtn").disabled = false; $("pauseBtn").textContent = "⏸"; bird.vy = birdDefs[selectedBird].jump; spawnFeathers(bird.x, bird.y); $("start").textContent = "BẤM ĐỂ BAY" }
+        function togglePause() {
+            if (!gameEntered || state === "over" || state === "ready") return;
+            paused = !paused;
+            if (paused) {
+                state = "paused";
+                $("pauseBtn").textContent = "▶";
+            } else {
+                state = "playing";
+                $("pauseBtn").textContent = "⏸";
+            }
+        }
+
+        function flap() {
+            if (!gameEntered || paused) return;
+            initAudio();
+            if (state === "ready") { startGame(); return }
+            if (state === "over") { reset(); startGame(); return }
+            bird.vy = birdDefs[selectedBird].jump;
+            spawnFeathers(bird.x, bird.y);
+        }
+        canvas.addEventListener("pointerdown", e => { e.preventDefault(); flap() });
+        canvas.addEventListener("pointermove", e => { e.preventDefault() });
+        canvas.addEventListener("touchmove", e => { e.preventDefault() }, { passive: false });
+        $("start").addEventListener("click", flap);
+        $("pauseBtn").addEventListener("click", togglePause);
+        $("enterGame").addEventListener("click", () => {
+            if (currentMap === "hell") {
+                $("hellConfirmModal").style.display = "flex";
+                return;
+            }
+            enterSelectedMap();
+        });
+        $("backToMenuBtn").addEventListener("click", () => {
+            gameEntered = false;
+            $("gameScreen").style.display = "none";
+            $("selectScreen").style.display = "block";
+            loadLeaderboard();
+        });
+        document.addEventListener("keydown", e => { if (e.code === "Space" || e.code === "ArrowUp") { e.preventDefault(); if (!e.repeat) flap() } else if (e.code === "KeyP") { e.preventDefault(); if (!e.repeat) togglePause() } });
+
+        function getHellDifficulty(value = score) {
+            // Địa Ngục: khó ngay từ đầu, tăng mạnh sau cột 10 và 50.
+            if (value >= 50) return { stage: 3, speedMult: 1.72, gravity: .45, gap: 168, amplitude: 58, frequencyMult: 1.5, spawnGap: 220 };
+            if (value >= 10) return { stage: 2, speedMult: 1.42, gravity: .40, gap: 168, amplitude: 42, frequencyMult: 1.25, spawnGap: 245 };
+            return { stage: 1, speedMult: 1.18, gravity: .36, gap: 168, amplitude: 28, frequencyMult: 1.05, spawnGap: 265 };
+        }
+
+        function addPipe() {
+            if (portalSpawnedFor100 || batMode) return;
+            const hell = currentMap === "hell" ? getHellDifficulty() : null;
+            const gap = hell ? hell.gap : 168;
+            const margin = 65, maxTop = H - GROUND - gap - margin, top = margin + Math.random() * Math.max(1, maxTop - margin); pipeCount++;
+            const p = {
+                x: W + 10, top, baseTop: top, gap, phase: Math.random() * Math.PI * 2,
+                amplitude: hell ? hell.amplitude : (pipeCount > 10 ? 20 + Math.random() * 35 : 0),
+                frequency: hell ? (.025 + Math.random() * .015) * hell.frequencyMult : .025 + Math.random() * .015,
+                moving: hell ? true : pipeCount > 10, passed: false, pickupMade: false
+            };
+            pipes.push(p);
+            if (pipeCount === 11) {
+                storm = true;
+                if (currentMap === "fire") $("mode").textContent = "🌋 NÚI LỬA PHUN TRÀO";
+                else if (currentMap === "ice") $("mode").textContent = "❄️ BÃO TUYẾT LẠNH";
+                else if (currentMap === "hell") $("mode").textContent = "👿 LINH HỒN TRỖI DẬY";
+                else $("mode").textContent = "⛈️ STORM MODE";
+            }
+        }
+
+        function spawnPortal(type = "enter") {
+            portal = {
+                // Cổng vào xuất hiện ngay gần chim khi chạm mốc 30/60/90...
+                // để map phụ thực sự bắt đầu đúng mốc điểm, không bị trễ vài cột.
+                x: type === "enter" ? bird.x + 105 : W + 50,
+                y: H / 2 - 30,
+                radius: 40,
+                angle: 0,
+                type: type
+            };
+        }
+
+        function spawnBat() {
+            bats.push({
+                x: W + 30,
+                y: 50 + Math.random() * (H - GROUND - 100),
+                speed: 3 + Math.random() * 2.5,
+                wingPhase: Math.random() * Math.PI * 2,
+                size: 22 + Math.random() * 8
+            });
+        }
+
+        function spawnPickup() {
+            if (batMode) return false;
+            const candidates = pipes.filter(p => p.x > bird.x + 35 && !p.pickupMade && p.x < W - 20);
+            if (candidates.length === 0) return false;
+            const p = candidates[0];
+            p.pickupMade = true;
+
+            const rand = Math.random() * 100;
+            let t = null;
+
+            if (rand < 15) {
+                t = pickupTypes.find(item => item.type === "chicken");
+            } else if (rand < 30) {
+                t = pickupTypes.find(item => item.type === "apple");
+            } else if (rand < 45) {
+                t = pickupTypes.find(item => item.type === "slow");
+            } else if (rand < 60) {
+                t = pickupTypes.find(item => item.type === "magnet");
+            } else if (rand < 75) {
+                t = pickupTypes.find(item => item.type === "compass");
+            } else {
+                return false;
+            }
+
+            pickups.push({ x: p.x + PIPE_W / 2, y: p.top + p.gap / 2, pipeRef: p, type: t.type, icon: t.icon, label: t.label, duration: t.duration, age: 0, bob: Math.random() * Math.PI * 2, collected: false });
+            return true;
+        }
+
+        function burst(x, y, color) { for (let i = 0; i < 12; i++) { const a = Math.random() * Math.PI * 2, s = 1 + Math.random() * 3; particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 24, color }) } }
+
+        function collectPickup(p) {
+            const duration = Math.round(p.duration * birdDefs[selectedBird].duration);
+            if (p.type === "apple") {
+                effects.invincible = duration; burst(p.x, p.y, "#ff3158");
+                addFloatingText("✨ EXCELLENT! ✨", bird.x, bird.y - 25, "#ff3158");
+            } else if (p.type === "chicken") {
+                effects.tiny = duration; burst(p.x, p.y, "#ffad33");
+                addFloatingText("🍗 XUẤT SẮC! 🍗", bird.x, bird.y - 25, "#ff9d20");
+            } else if (p.type === "magnet") {
+                effects.magnet = duration; burst(p.x, p.y, "#bd68ff");
+                addFloatingText("🧲 EXCELLENT!", bird.x, bird.y - 25, "#bd68ff");
+            } else if (p.type === "slow") {
+                effects.slow = duration; burst(p.x, p.y, "#74e6ff");
+                addFloatingText("🐌 XUẤT SẮC!", bird.x, bird.y - 25, "#74e6ff");
+            } else if (p.type === "compass") {
+                effects.compass = duration; burst(p.x, p.y, "#ffcc00");
+                addFloatingText("🧭 EXCELLENT!", bird.x, bird.y - 25, "#ffcc00");
+            }
+        }
+
+        function updateBuffLabel() {
+            const active = [];
+            if (effects.invincible > 0) active.push("🍎 Bất Tử: " + (effects.invincible / 60).toFixed(1) + "s");
+            if (effects.tiny > 0) active.push("🍗 Thu Nhỏ: " + (effects.tiny / 60).toFixed(1) + "s");
+            if (effects.magnet > 0) active.push("🧲 Hút: " + (effects.magnet / 60).toFixed(1) + "s");
+            if (effects.slow > 0) active.push("🐌 Chậm: " + (effects.slow / 60).toFixed(1) + "s");
+            if (effects.compass > 0) active.push("🧭 La Bàn: " + (effects.compass / 60).toFixed(1) + "s");
+            $("buffStatus").textContent = active.length ? active.join("  |  ") : "✨ Sẵn sàng nhặt buff!";
+        }
+
+        function drawBackground() {
+            const sky = ctx.createLinearGradient(0, 0, 0, H);
+            if (batMode) {
+                sky.addColorStop(0, "#101a3a"); sky.addColorStop(.42, "#24336a"); sky.addColorStop(1, "#4a3b78");
+            } else if (currentMap === "fire") {
+                sky.addColorStop(0, "#1a0200"); sky.addColorStop(.5, "#4a0d03"); sky.addColorStop(1, "#b33600");
+            } else if (currentMap === "ice") {
+                sky.addColorStop(0, "#227093"); sky.addColorStop(.5, "#34ace0"); sky.addColorStop(1, "#d1f2eb");
+            } else if (currentMap === "hell") {
+                sky.addColorStop(0, "#0b0214"); sky.addColorStop(.5, "#240538"); sky.addColorStop(1, "#590d4e");
+            } else {
+                if (stormFade > 0) { sky.addColorStop(0, "#26344f"); sky.addColorStop(.55, "#607b92"); sky.addColorStop(1, "#b5d0d7") } else { sky.addColorStop(0, "#62d7ff"); sky.addColorStop(1, "#e0f9ff") }
+            }
+            ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+
+            if (batMode) {
+                // Soft moonlight and subtle stars for better visibility without clutter.
+                const moon = ctx.createRadialGradient(W - 72, 72, 8, W - 72, 72, 62);
+                moon.addColorStop(0, "rgba(255,245,190,.9)");
+                moon.addColorStop(.35, "rgba(210,225,255,.28)");
+                moon.addColorStop(1, "rgba(210,225,255,0)");
+                ctx.fillStyle = moon;
+                ctx.beginPath(); ctx.arc(W - 72, 72, 62, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = "rgba(255,255,255,.7)";
+                for (let i = 0; i < 22; i++) {
+                    const sx = (i * 83 + 31) % W;
+                    const sy = 18 + ((i * 47) % Math.max(40, H - GROUND - 35));
+                    const sr = 0.7 + ((i * 13) % 10) / 10;
+                    ctx.globalAlpha = .35 + .25 * Math.sin(frame * .03 + i);
+                    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+            }
+
+            if (!batMode) {
+                if (currentMap === "fire") {
+                    ctx.fillStyle = "#2b0300";
+                    ctx.beginPath(); ctx.moveTo(0, H - GROUND); ctx.lineTo(50, H - GROUND - 130); ctx.lineTo(120, H - GROUND); ctx.lineTo(200, H - GROUND - 160); ctx.lineTo(280, H - GROUND); ctx.lineTo(340, H - GROUND - 110); ctx.lineTo(W, H - GROUND); ctx.fill();
+
+                    ctx.fillStyle = "#ff3300";
+                    for (let i = 0; i < 3; i++) {
+                        let lx = 60 + i * 110 + Math.sin(frame * 0.05 + i) * 15;
+                        ctx.beginPath(); ctx.arc(lx, H - GROUND - 25, 12, Math.PI, 0); ctx.fill();
+                    }
+                    ctx.fillStyle = "rgba(255,140,0,.2)";
+                    for (let i = 0; i < 5; i++) { const x = ((i * 90 - frame * .8) % W + W) % W, y = 80 + i * 60; ctx.beginPath(); ctx.arc(x, y, 25, 0, Math.PI * 2); ctx.fill() }
+
+                } else if (currentMap === "ice") {
+                    ctx.fillStyle = "rgba(255,255,255,.3)";
+                    ctx.beginPath(); ctx.moveTo(0, H - GROUND); ctx.lineTo(80, H - GROUND - 120); ctx.lineTo(170, H - GROUND); ctx.lineTo(260, H - GROUND - 140); ctx.lineTo(W, H - GROUND); ctx.fill();
+                    ctx.fillStyle = "rgba(255,255,255,.6)";
+                    for (let i = 0; i < 4; i++) { const x = ((i * 100 - frame * .3) % (W + 80) + W + 80) % (W + 80) - 40, y = 50 + i * 60; ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI * 2); ctx.arc(x + 15, y - 10, 25, 0, Math.PI * 2); ctx.arc(x + 30, y, 18, 0, Math.PI * 2); ctx.fill() }
+
+                } else if (currentMap === "hell") {
+                    ctx.fillStyle = "#170224";
+                    ctx.beginPath(); ctx.moveTo(0, H - GROUND); ctx.lineTo(70, H - GROUND - 150); ctx.lineTo(100, H - GROUND - 140); ctx.lineTo(150, H - GROUND); ctx.lineTo(230, H - GROUND - 180); ctx.lineTo(310, H - GROUND); ctx.fill();
+                    ctx.fillStyle = "rgba(191,0,255,.25)";
+                    for (let i = 0; i < 6; i++) { const x = ((i * 75 - frame * .4) % W + W) % W, y = 40 + i * 55; ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.fill() }
+
+                } else {
+                    ctx.fillStyle = stormFade > 0 ? "rgba(61,76,96,.9)" : "rgba(255,255,255,.9)"; for (let i = 0; i < 5; i++) { const x = ((i * 105 - frame * .35) % (W + 100) + W + 100) % (W + 100) - 35, y = 55 + (i % 3) * 65; ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.arc(x + 20, y - 9, 21, 0, Math.PI * 2); ctx.arc(x + 41, y, 15, 0, Math.PI * 2); ctx.fill() }
+                }
+            }
+
+            if (batMode) ctx.fillStyle = "#110022";
+            else if (currentMap === "fire") ctx.fillStyle = "#3d0300";
+            else if (currentMap === "ice") ctx.fillStyle = "#74b9ff";
+            else if (currentMap === "hell") ctx.fillStyle = "#1b032e";
+            else ctx.fillStyle = stormFade > 0 ? "#607e79" : "#91e5a0";
+
+            ctx.beginPath(); ctx.moveTo(0, H - GROUND); for (let x = 0; x <= W; x += 6)ctx.lineTo(x, H - GROUND - 20 - Math.sin((x + frame * .6) / 40) * 14); ctx.lineTo(W, H - GROUND); ctx.fill();
+
+            if (stormFade > 0 && currentMap === "classic" && !batMode) { ctx.fillStyle = `rgba(15,20,42,${.48 * stormFade})`; ctx.fillRect(0, 0, W, H) }
+        }
+
+        function drawPipe(p) {
+            const bottomY = p.top + p.gap;
+            function onePipe(x, y, w, h, capAtBottom) {
+                if (h <= 0) return;
+                let mainC, lightC, darkC, borderC, capC, capLight;
+                if (currentMap === "fire") {
+                    mainC = "#cc3300"; lightC = "#ff6633"; darkC = "#991400"; borderC = "#4d0a00"; capC = "#e63900"; capLight = "#ff944d";
+                } else if (currentMap === "ice") {
+                    mainC = "#2b9bf4"; lightC = "#70bbfb"; darkC = "#1565c0"; borderC = "#0d3b66"; capC = "#1e88e5"; capLight = "#a5d8ff";
+                } else if (currentMap === "hell") {
+                    mainC = "#12061a"; lightC = "#4a0e35"; darkC = "#05010a"; borderC = "#ff1a40"; capC = "#240733"; capLight = "#ff4d79";
+                } else {
+                    mainC = stormFade > 0 ? "#258a55" : "#20b94a"; lightC = stormFade > 0 ? "#66b58b" : "#70f17b"; darkC = stormFade > 0 ? "#15543e" : "#138237"; borderC = stormFade > 0 ? "#183c3c" : "#08732e"; capC = stormFade > 0 ? "#318e60" : "#26c54f"; capLight = stormFade > 0 ? "#80bfa0" : "#81f58a";
+                }
+                ctx.fillStyle = mainC; ctx.fillRect(x, y, w, h);
+                ctx.fillStyle = lightC; ctx.fillRect(x + 7, y, 8, h);
+                ctx.fillStyle = darkC; ctx.fillRect(x + w - 8, y, 8, h);
+                ctx.strokeStyle = borderC; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h);
+
+                const capH = 19, extra = 7, capY = capAtBottom ? y + h - capH : y;
+                ctx.fillStyle = capC; ctx.fillRect(x - extra, capY, w + extra * 2, capH);
+                ctx.fillStyle = capLight; ctx.fillRect(x - extra + 5, capY + 3, 7, capH - 6);
+                ctx.strokeStyle = borderC; ctx.strokeRect(x - extra, capY, w + extra * 2, capH);
+            }
+            onePipe(p.x, 0, PIPE_W, p.top, true);
+            onePipe(p.x, bottomY, PIPE_W, H - GROUND - bottomY, false);
+        }
+
+        function drawPortal() {
+            if (!portal) return;
+            ctx.save();
+            ctx.translate(portal.x, portal.y);
+            portal.angle += 0.05;
+
+            const grad = ctx.createRadialGradient(0, 0, 5, 0, 0, portal.radius + 15);
+            grad.addColorStop(0, portal.type === "enter" ? "#bd68ff" : "#55efc4");
+            grad.addColorStop(0.6, portal.type === "enter" ? "#9c27b0" : "#00cec9");
+            grad.addColorStop(1, "transparent");
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(0, 0, portal.radius + 15, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.rotate(portal.angle);
+            ctx.strokeStyle = portal.type === "enter" ? "#ffffff" : "#ffeaa7";
+            ctx.lineWidth = 4;
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.arc(0, 0, portal.radius - i * 8, i, i + Math.PI, false);
+                ctx.stroke();
+            }
+
+            ctx.rotate(-portal.angle);
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 12px Arial";
+            ctx.textAlign = "center";
+            ctx.shadowColor = "#000";
+            ctx.shadowBlur = 4;
+            ctx.fillText(portal.type === "enter" ? "🌀 VÀO CỔNG" : "✨ TRỜI VỀ", 0, portal.radius + 22);
+
+            ctx.restore();
+        }
+
+        function drawBats() {
+            ctx.save();
+            for (const b of bats) {
+                ctx.save();
+                ctx.translate(b.x, b.y);
+                b.wingPhase += 0.25;
+                const wingY = Math.sin(b.wingPhase) * (b.size * 0.6);
+
+                ctx.fillStyle = "#111827";
+                ctx.strokeStyle = "#ffd166";
+                ctx.lineWidth = 2.2;
+
+                ctx.beginPath();
+                ctx.arc(0, 0, b.size * 0.35, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.quadraticCurveTo(-b.size * 0.8, -b.size * 0.9 + wingY, -b.size * 1.3, wingY);
+                ctx.quadraticCurveTo(-b.size * 0.6, b.size * 0.3, 0, 0);
+                ctx.quadraticCurveTo(b.size * 0.6, b.size * 0.3, b.size * 1.3, wingY);
+                ctx.quadraticCurveTo(b.size * 0.8, -b.size * 0.9 + wingY, 0, 0);
+                ctx.fill();
+
+                ctx.fillStyle = "#ff0000";
+                ctx.beginPath();
+                ctx.arc(-3, -2, 2, 0, Math.PI * 2);
+                ctx.arc(3, -2, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+            ctx.restore();
+        }
+
+        function drawBatWarning() {
+            if (!batMode || batIntroTimer <= 0) return;
+
+            // Nhấp nháy theo nhịp 0.2 giây để cảnh báo rõ nhưng không che kín màn hình.
+            const blink = Math.floor(batIntroTimer / 12) % 2 === 0;
+            ctx.save();
+            if (blink) {
+                ctx.fillStyle = "rgba(255, 35, 70, 0.18)";
+                ctx.fillRect(0, 0, W, H);
+            }
+
+            ctx.textAlign = "center";
+            ctx.shadowBlur = blink ? 18 : 0;
+            ctx.shadowColor = "#ff334f";
+            ctx.fillStyle = blink ? "#ff4757" : "#ffffff";
+            ctx.font = "bold 27px Arial";
+            ctx.fillText("⚠️ CẢNH BÁO DƠI ⚠️", W / 2, H / 2 - 20);
+            ctx.font = "bold 16px Arial";
+            ctx.fillText(`Chuẩn bị! ${(batIntroTimer / 60).toFixed(1)}s`, W / 2, H / 2 + 15);
+            ctx.shadowBlur = 0;
+            ctx.font = "13px Arial";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("Dơi sẽ xuất hiện ngay sau khi cảnh báo kết thúc", W / 2, H / 2 + 42);
+            ctx.restore();
+        }
+
+        function drawBossBar() {
+            if (!batMode) return;
+            const barW = 240, barH = 16, x = (W - barW) / 2, y = 38;
+            const progress = Math.max(0, batTimer / BAT_MODE_DURATION);
+
+            ctx.save();
+            ctx.fillStyle = "rgba(0,0,0,0.6)";
+            ctx.fillRect(x - 2, y - 2, barW + 4, barH + 4);
+            ctx.strokeStyle = "#ff4757";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - 2, y - 2, barW + 4, barH + 4);
+
+            ctx.fillStyle = "#ff4757";
+            ctx.fillRect(x, y, barW * progress, barH);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 11px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(`🦇 ĐẤU TRƯỜNG DƠI: ${(batTimer / 60).toFixed(1)}s`, W / 2, y + 12);
+            ctx.restore();
+        }
+
+        function drawCompassGuide() {
+            if (effects.compass <= 0) return;
+            const nextPipe = pipes.find(p => p.x + PIPE_W > bird.x);
+            if (!nextPipe) return;
+
+            const targetY = nextPipe.top + nextPipe.gap / 2;
+            ctx.save();
+            ctx.strokeStyle = "rgba(255, 204, 0, 0.75)";
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([6, 6]);
+            ctx.beginPath();
+            ctx.moveTo(bird.x, bird.y);
+            ctx.lineTo(nextPipe.x, targetY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = "#ffcc00";
+            ctx.beginPath();
+            ctx.arc(nextPipe.x, targetY, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawBird() {
+            const size = (effects.tiny > 0 ? BIRD_SIZE * .6 : BIRD_SIZE) * birdDefs[selectedBird].scale, birdDef = birdDefs[selectedBird]; ctx.save(); ctx.translate(bird.x, bird.y); ctx.rotate(Math.max(-.22, Math.min(.48, bird.vy * .028)));
+            if (effects.invincible > 0) { ctx.strokeStyle = `rgba(255,239,90,${.7 + .25 * Math.sin(frame * .3)})`; ctx.lineWidth = 3.5; ctx.shadowColor = "#ffe66d"; ctx.shadowBlur = 16; ctx.beginPath(); ctx.arc(0, 0, size * .72, 0, Math.PI * 2); ctx.stroke(); ctx.shadowBlur = 0 }
+            if (effects.magnet > 0) { ctx.strokeStyle = "rgba(206,147,216,.9)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, size * .88 + Math.sin(frame * .15) * 2, 0, Math.PI * 2); ctx.stroke() }
+            if (effects.compass > 0) { ctx.strokeStyle = "rgba(255,204,0,.9)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, size * 1.05 + Math.sin(frame * .2) * 2, 0, Math.PI * 2); ctx.stroke() }
+            ctx.fillStyle = "rgba(35,55,70,.18)"; ctx.beginPath(); ctx.ellipse(-1, size * .32, size * .42, size * .15, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = birdDef.beak; ctx.strokeStyle = "#542d20"; ctx.lineWidth = Math.max(1.5, size * .045); ctx.lineJoin = "round"; ctx.beginPath(); ctx.moveTo(-size * .36, size * .12); ctx.quadraticCurveTo(-size * .58, size * .02, -size * .62, -size * .08); ctx.quadraticCurveTo(-size * .59, size * .10, -size * .53, size * .23); ctx.quadraticCurveTo(-size * .39, size * .22, -size * .36, size * .12); ctx.closePath(); ctx.fill(); ctx.stroke();
+            ctx.strokeStyle = "#542d20"; ctx.lineWidth = Math.max(2, size * .065); ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(-size * .12, size * .34); ctx.lineTo(-size * .19, size * .49); ctx.lineTo(-size * .30, size * .52); ctx.moveTo(size * .05, size * .34); ctx.lineTo(size * .02, size * .47); ctx.lineTo(size * .13, size * .50); ctx.stroke(); ctx.strokeStyle = "#ef6a20"; ctx.lineWidth = Math.max(1.2, size * .035); ctx.beginPath(); ctx.moveTo(-size * .19, size * .48); ctx.lineTo(-size * .32, size * .53); ctx.moveTo(size * .02, size * .47); ctx.lineTo(size * .16, size * .51); ctx.stroke();
+            ctx.fillStyle = birdDef.body; ctx.strokeStyle = "#542d20"; ctx.lineWidth = Math.max(1.8, size * .055); ctx.beginPath(); ctx.ellipse(-size * .025, 0, size * .48, size * .43, -.08, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.fillStyle = birdDef.light; ctx.beginPath(); ctx.ellipse(-size * .06, -size * .26, size * .24, size * .11, -.30, Math.PI, Math.PI * 2); ctx.fill(); ctx.fillStyle = birdDef.belly; ctx.beginPath(); ctx.ellipse(-size * .03, size * .20, size * .30, size * .19, -.08, 0, Math.PI * 2); ctx.fill();
+            ctx.save(); ctx.translate(-size * .22, size * .08); const wingBeat = Math.sin(frame * .34) * .32 + (state === "playing" ? -.08 : 0); ctx.rotate(wingBeat); ctx.fillStyle = birdDef.wing; ctx.strokeStyle = "#542d20"; ctx.lineWidth = Math.max(1.5, size * .05); ctx.beginPath(); ctx.ellipse(0, size * .015, size * .31, size * .22, -.12, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.fillStyle = birdDef.wingLight; ctx.beginPath(); ctx.ellipse(-size * .025, -size * .045, size * .235, size * .115, -.14, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = "#eaa02c"; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(-size * .025, -size * .045, size * .235, size * .115, -.14, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+            ctx.fillStyle = "#fffdf7"; ctx.strokeStyle = "#542d20"; ctx.lineWidth = Math.max(1.6, size * .05); ctx.beginPath(); ctx.ellipse(size * .20, -size * .16, size * .19, size * .235, -.12, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#4b2b20"; ctx.beginPath(); ctx.ellipse(size * .255, -size * .13, size * .085, size * .13, -.10, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(size * .275, -size * .185, size * .035, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = birdDef.beak; ctx.strokeStyle = "#542d20"; ctx.lineWidth = Math.max(1.8, size * .055); ctx.beginPath(); ctx.moveTo(size * .34, -size * .015); ctx.quadraticCurveTo(size * .60, -size * .13, size * .72, size * .035); ctx.quadraticCurveTo(size * .67, size * .16, size * .36, size * .16); ctx.quadraticCurveTo(size * .31, size * .075, size * .34, -size * .015); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#ff7b32"; ctx.beginPath(); ctx.moveTo(size * .36, size * .075); ctx.quadraticCurveTo(size * .59, size * .055, size * .69, size * .085); ctx.quadraticCurveTo(size * .58, size * .20, size * .37, size * .16); ctx.closePath(); ctx.fill(); ctx.stroke(); drawHat(size); ctx.restore();
+        }
+
+        function getTitleVisual(id) {
+            const styles = {
+                bat_hunter: {tier:"silver", a:"#b8d8ff", b:"#6aa8ff", glow:"rgba(106,168,255,.65)"},
+                hell_conqueror: {tier:"gold", a:"#ffe66d", b:"#ff9f43", glow:"rgba(255,159,67,.72)"},
+                nightmare: {tier:"fire", a:"#fff0a3", b:"#ff4d4d", glow:"rgba(255,65,65,.78)"},
+                fashion_fan: {tier:"epic", a:"#f0b6ff", b:"#9b5cff", glow:"rgba(155,92,255,.72)"},
+                fashion_king: {tier:"mythic", a:"#ffffff", b:"#57d8ff", glow:"rgba(87,216,255,.82)"},
+                ice_vip: {tier:"icevip", a:"#ffffff", b:"#65e7ff", glow:"rgba(101,231,255,.88)"}
+            };
+            return styles[id] || {tier:"normal", a:"#fff4a8", b:"#e7b83e", glow:"rgba(231,184,62,.55)"};
+        }
+
+        function drawSelectedTitle() {
+            const t = achievementTitles[selectedTitle];
+            if (!t || !unlockedTitles.includes(selectedTitle)) return;
+
+            const visual = getTitleVisual(selectedTitle);
+            const bob = Math.sin(frame * 0.09) * 2.5;
+            const pulse = 0.82 + Math.sin(frame * 0.12) * 0.18;
+            const label = `${t.icon} ${t.name}`;
+            ctx.save();
+            ctx.font = "bold 11px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            const padX = 9, textW = ctx.measureText(label).width;
+            const boxW = textW + padX * 2, boxH = 23;
+            const x = bird.x;
+            const y = bird.y - 39 + bob;
+
+            // Đuôi nhỏ nối khung với chim.
+            ctx.fillStyle = "rgba(18,18,30,.88)";
+            ctx.beginPath();
+            ctx.moveTo(x - 5, y + boxH / 2 - 1);
+            ctx.lineTo(x, y + boxH / 2 + 7);
+            ctx.lineTo(x + 5, y + boxH / 2 - 1);
+            ctx.closePath();
+            ctx.fill();
+
+            // Hiệu ứng VIP khác nhau theo cấp danh hiệu.
+            if (visual.tier === "fire") {
+                for (let i = 0; i < 5; i++) {
+                    const ang = frame * 0.045 + i * 1.25;
+                    const px = x + Math.cos(ang) * (boxW * .45);
+                    const py = y + Math.sin(ang) * 8 - 4;
+                    ctx.globalAlpha = .35 + .25 * Math.sin(frame * .15 + i);
+                    ctx.fillStyle = i % 2 ? "#ff7b22" : "#ffe66d";
+                    ctx.beginPath(); ctx.arc(px, py, 1.6 + (i % 2), 0, Math.PI * 2); ctx.fill();
+                }
+            } else if (visual.tier === "icevip") {
+                for (let i = 0; i < 8; i++) {
+                    const ang = frame * 0.025 + i * Math.PI / 4;
+                    const px = x + Math.cos(ang) * (boxW * .58);
+                    const py = y + Math.sin(ang) * 11;
+                    ctx.globalAlpha = .45 + .35 * Math.sin(frame * .10 + i);
+                    ctx.fillStyle = i % 2 ? "#ffffff" : "#8eeaff";
+                    ctx.beginPath();
+                    ctx.moveTo(px, py - 3); ctx.lineTo(px + 1.4, py); ctx.lineTo(px, py + 3); ctx.lineTo(px - 1.4, py); ctx.closePath(); ctx.fill();
+                }
+            } else if (visual.tier === "mythic") {
+                for (let i = 0; i < 6; i++) {
+                    const ang = frame * 0.035 + i * Math.PI / 3;
+                    const px = x + Math.cos(ang) * (boxW * .55);
+                    const py = y + Math.sin(ang) * 10;
+                    ctx.globalAlpha = .45 + .3 * Math.sin(frame * .12 + i);
+                    ctx.fillStyle = i % 2 ? "#ffffff" : "#67e8ff";
+                    ctx.beginPath();
+                    ctx.moveTo(px, py - 3); ctx.lineTo(px + 1.5, py); ctx.lineTo(px, py + 3); ctx.lineTo(px - 1.5, py); ctx.closePath(); ctx.fill();
+                }
+            }
+            ctx.globalAlpha = 1;
+
+            // Glow nhẹ quanh khung, tăng theo độ VIP.
+            ctx.shadowColor = visual.glow;
+            ctx.shadowBlur = visual.tier === "mythic" || visual.tier === "icevip" ? 18 : visual.tier === "fire" ? 15 : 11;
+
+            const grad = ctx.createLinearGradient(x - boxW / 2, y, x + boxW / 2, y);
+            grad.addColorStop(0, visual.a);
+            grad.addColorStop(.5, visual.b);
+            grad.addColorStop(1, visual.a);
+            ctx.fillStyle = "rgba(20,22,34,.93)";
+            ctx.beginPath(); ctx.roundRect(x - boxW / 2, y - boxH / 2, boxW, boxH, 9); ctx.fill();
+            ctx.shadowBlur = 0;
+
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = visual.tier === "mythic" ? 2.2 : 1.6;
+            ctx.globalAlpha = .82 + .18 * pulse;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+
+            // Viền trong tạo cảm giác khung cao cấp.
+            ctx.strokeStyle = `rgba(255,255,255,${visual.tier === "normal" ? .12 : .22})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.roundRect(x - boxW / 2 + 2, y - boxH / 2 + 2, boxW - 4, boxH - 4, 7); ctx.stroke();
+
+            ctx.fillStyle = "#ffffff";
+            ctx.shadowColor = visual.glow;
+            ctx.shadowBlur = visual.tier === "mythic" ? 7 : visual.tier === "fire" ? 5 : 3;
+            ctx.fillText(label, x, y + .5);
+            ctx.shadowBlur = 0;
+            ctx.restore();
+        }
+
+        function drawPickups() {
+            for (const p of pickups) {
+                const bob = Math.sin(frame * .09 + p.bob) * 2, colors = { apple: "#ff3158", chicken: "#ff9d20", magnet: "#a64dff", slow: "#74e6ff", compass: "#ffcc00" };
+                ctx.save(); ctx.translate(p.x, p.y + bob);
+                ctx.shadowColor = colors[p.type] || "#74e6ff"; ctx.shadowBlur = 16;
+                ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(0, 0, 23, 0, Math.PI * 2); ctx.fill();
+                ctx.shadowBlur = 0; ctx.fillStyle = colors[p.type] || "#74e6ff";
+                ctx.beginPath(); ctx.arc(0, 0, 19, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.stroke();
+                ctx.font = "27px 'Apple Color Emoji','Segoe UI Emoji',Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.fillText(p.icon, 0, 1); ctx.restore();
+            }
+        }
+
+        function drawFloatingTexts() {
+            ctx.save();
+            ctx.font = "bold 18px Arial";
+            ctx.textAlign = "center";
+            for (const ft of floatingTexts) {
+                ctx.fillStyle = ft.color;
+                ctx.globalAlpha = Math.max(0, ft.alpha);
+                ctx.shadowColor = "#000";
+                ctx.shadowBlur = 4;
+                ctx.fillText(ft.text, ft.x, ft.y);
+            }
+            ctx.restore();
+        }
+
+        function drawFeathers() {
+            ctx.save();
+            for(const f of feathers){
+                ctx.save(); ctx.translate(f.x,f.y); ctx.rotate(f.angle); ctx.globalAlpha=Math.max(0,f.life/45); const t=f.type||"feather";
+                if(t==="heart"){ctx.fillStyle="#ff4f81";ctx.font="15px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("♥",0,0)}
+                else if(t==="drop"){ctx.fillStyle="#51c9ff";ctx.beginPath();ctx.moveTo(0,-7);ctx.quadraticCurveTo(7,1,0,7);ctx.quadraticCurveTo(-7,1,0,-7);ctx.fill()}
+                else if(t==="star"){ctx.fillStyle="#ffd84d";ctx.font="16px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("★",0,0)}
+                else if(t==="fire"){ctx.fillStyle=Math.random()>.5?"#ff4b00":"#ffd23f";ctx.font="16px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("♦",0,0)}
+                else if(t==="sparkle"){ctx.strokeStyle="#fff3a6";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-5,0);ctx.lineTo(5,0);ctx.moveTo(0,-5);ctx.lineTo(0,5);ctx.stroke()}
+                else if(t==="petal"){ctx.fillStyle="#ff9fcb";ctx.beginPath();ctx.ellipse(0,0,5,2.8,.5,0,Math.PI*2);ctx.fill()}
+                else if(t==="hell"){ctx.fillStyle=Math.random()>.5?"#ff2b69":"#9c35ff";ctx.font="15px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("☠",0,0)}
+                else {ctx.fillStyle=f.color;ctx.strokeStyle="#542d20";ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(0,0,6,2.5,0,0,Math.PI*2);ctx.fill();ctx.stroke()}
+                ctx.restore();
+            }
+            ctx.restore();
+        }
+        function drawHat(size){
+            if(selectedHat==="none")return; const h=selectedHat; ctx.save(); ctx.lineJoin="round"; ctx.lineCap="round";
+            if(h==="straw"){ctx.fillStyle="#e9bd45";ctx.strokeStyle="#8a5b20";ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(-size*.03,-size*.48,size*.48,size*.11,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle="#d99f2d";ctx.fillRect(-size*.27,-size*.72,size*.48,size*.25);ctx.strokeRect(-size*.27,-size*.72,size*.48,size*.25)}
+            else if(h==="helmet"){ctx.fillStyle="#6f7d86";ctx.strokeStyle="#33434c";ctx.lineWidth=2;ctx.beginPath();ctx.arc(-size*.03,-size*.34,size*.43,Math.PI,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillRect(-size*.48,-size*.39,size*.9,size*.10);ctx.strokeRect(-size*.48,-size*.39,size*.9,size*.10)}
+            else if(h==="cap"){ctx.fillStyle="#3187e8";ctx.strokeStyle="#164b8f";ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(-size*.03,-size*.36,size*.36,Math.PI,Math.PI*2);ctx.fill();ctx.stroke();ctx.beginPath();ctx.ellipse(size*.25,-size*.29,size*.30,size*.07,.1,0,Math.PI*2);ctx.fill();ctx.stroke()}
+            else if(h==="crown"){ctx.fillStyle="#ffd84a";ctx.strokeStyle="#9b6d00";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-size*.35,-size*.38);ctx.lineTo(-size*.30,-size*.70);ctx.lineTo(-size*.05,-size*.48);ctx.lineTo(size*.12,-size*.72);ctx.lineTo(size*.25,-size*.45);ctx.lineTo(size*.38,-size*.63);ctx.lineTo(size*.34,-size*.34);ctx.closePath();ctx.fill();ctx.stroke()}
+            else if(h==="cowboy"){ctx.fillStyle="#a56a2a";ctx.strokeStyle="#623c18";ctx.lineWidth=1.6;ctx.beginPath();ctx.ellipse(-size*.02,-size*.48,size*.52,size*.12,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(-size*.30,-size*.48);ctx.quadraticCurveTo(-size*.25,-size*.78,-size*.05,-size*.70);ctx.quadraticCurveTo(size*.18,-size*.80,size*.28,-size*.48);ctx.closePath();ctx.fill();ctx.stroke()}
+            else if(h==="pumpkin"){
+                ctx.save();
+                ctx.fillStyle="#ff7b24"; ctx.strokeStyle="#8f3d16"; ctx.lineWidth=Math.max(1.2,size*.035);
+                ctx.beginPath();
+                ctx.moveTo(-size*.39,-size*.42);
+                ctx.quadraticCurveTo(-size*.45,-size*.64,-size*.25,-size*.72);
+                ctx.quadraticCurveTo(-size*.08,-size*.79,size*.03,-size*.70);
+                ctx.quadraticCurveTo(size*.22,-size*.80,size*.36,-size*.62);
+                ctx.quadraticCurveTo(size*.47,-size*.43,size*.31,-size*.28);
+                ctx.quadraticCurveTo(size*.02,-size*.16,-size*.27,-size*.25);
+                ctx.quadraticCurveTo(-size*.38,-size*.29,-size*.39,-size*.42);
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.strokeStyle="#c9571e"; ctx.lineWidth=Math.max(1,size*.025);
+                for(const dx of [-.20,-.07,.08,.21]){
+                    ctx.beginPath(); ctx.moveTo(size*dx,-size*.69); ctx.quadraticCurveTo(size*(dx-.04),-size*.45,size*(dx+.01),-size*.27); ctx.stroke();
+                }
+                ctx.fillStyle="#2f7f3c"; ctx.strokeStyle="#1e5a2a";
+                ctx.beginPath(); ctx.roundRect(-size*.06,-size*.84,size*.12,size*.18,size*.03); ctx.fill(); ctx.stroke();
+                ctx.fillStyle="#2a1720"; ctx.beginPath();
+                ctx.moveTo(-size*.18,-size*.46); ctx.lineTo(-size*.07,-size*.52); ctx.lineTo(-size*.02,-size*.43); ctx.lineTo(-size*.14,-size*.39); ctx.closePath(); ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(size*.08,-size*.43); ctx.lineTo(size*.15,-size*.52); ctx.lineTo(size*.25,-size*.46); ctx.lineTo(size*.17,-size*.39); ctx.closePath(); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(-size*.17,-size*.30); ctx.quadraticCurveTo(size*.02,-size*.20,size*.20,-size*.31); ctx.stroke();
+                ctx.restore();
+            }
+            else if(h==="devil"){ctx.fillStyle="#d51d48";ctx.strokeStyle="#671024";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-size*.30,-size*.48);ctx.lineTo(-size*.38,-size*.78);ctx.lineTo(-size*.08,-size*.57);ctx.closePath();ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(size*.12,-size*.57);ctx.lineTo(size*.40,-size*.80);ctx.lineTo(size*.32,-size*.45);ctx.closePath();ctx.fill();ctx.stroke()}
+            else if(h==="witch"){
+                ctx.fillStyle="#4b2a6d"; ctx.strokeStyle="#2b173f"; ctx.lineWidth=Math.max(1.2,size*.035);
+                ctx.beginPath(); ctx.ellipse(-size*.02,-size*.38,size*.50,size*.11,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-size*.27,-size*.40); ctx.quadraticCurveTo(-size*.18,-size*.70,-size*.02,-size*.92); ctx.quadraticCurveTo(size*.14,-size*.70,size*.28,-size*.40); ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.strokeStyle="#d9a83b"; ctx.lineWidth=Math.max(1,size*.028); ctx.beginPath(); ctx.moveTo(-size*.22,-size*.43); ctx.quadraticCurveTo(0,-size*.35,size*.23,-size*.43); ctx.stroke();
+            }
+            else if(h==="ninja"){
+                ctx.fillStyle="#252238"; ctx.strokeStyle="#141321"; ctx.lineWidth=Math.max(1.2,size*.03);
+                ctx.beginPath(); ctx.moveTo(-size*.42,-size*.34); ctx.quadraticCurveTo(-size*.10,-size*.60,size*.40,-size*.34); ctx.lineTo(size*.30,-size*.08); ctx.quadraticCurveTo(0,size*.02,-size*.38,-size*.08); ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.fillStyle="#d8a16d"; ctx.beginPath(); ctx.ellipse(size*.18,-size*.16,size*.16,size*.11,0,0,Math.PI*2); ctx.fill();
+                ctx.strokeStyle="#8f2946"; ctx.lineWidth=Math.max(1,size*.035); ctx.beginPath(); ctx.moveTo(size*.18,-size*.04); ctx.quadraticCurveTo(size*.44,size*.10,size*.53,size*.25); ctx.stroke();
+            }
+            else if(h==="santa"){
+                ctx.fillStyle="#e83b48"; ctx.strokeStyle="#8d1f2a"; ctx.lineWidth=Math.max(1.2,size*.035);
+                ctx.beginPath(); ctx.ellipse(-size*.02,-size*.40,size*.47,size*.11,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-size*.30,-size*.40); ctx.quadraticCurveTo(-size*.22,-size*.72,size*.04,-size*.88); ctx.quadraticCurveTo(size*.13,-size*.62,size*.30,-size*.48); ctx.quadraticCurveTo(size*.08,-size*.39,-size*.30,-size*.40); ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.fillStyle="#fff8f2"; ctx.strokeStyle="#c9b6ad"; ctx.beginPath(); ctx.ellipse(-size*.01,-size*.86,size*.12,size*.10,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.fillStyle="#fff8f2"; ctx.beginPath(); ctx.ellipse(size*.02,-size*.43,size*.48,size*.07,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+            }
+            else if(h==="chef"){
+                ctx.fillStyle="#fffaf2"; ctx.strokeStyle="#8c7f78"; ctx.lineWidth=Math.max(1.2,size*.032);
+                ctx.beginPath(); ctx.ellipse(-size*.02,-size*.48,size*.43,size*.14,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.arc(-size*.23,-size*.55,size*.16,Math.PI,Math.PI*2); ctx.arc(-size*.02,-size*.64,size*.18,Math.PI,Math.PI*2); ctx.arc(size*.19,-size*.55,size*.16,Math.PI,Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.fillRect(-size*.34,-size*.48,size*.68,size*.18); ctx.strokeRect(-size*.34,-size*.48,size*.68,size*.18);
+                ctx.fillStyle="#e9c9b6"; ctx.fillRect(-size*.08,-size*.51,size*.16,size*.07);
+            }
+            else if(h==="sunglasses"){
+                ctx.fillStyle="rgba(35,24,55,.92)"; ctx.strokeStyle="#11101a"; ctx.lineWidth=Math.max(1.4,size*.035);
+                ctx.beginPath(); ctx.roundRect(size*.02,-size*.29,size*.30,size*.17,size*.05); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.roundRect(size*.34,-size*.29,size*.30,size*.17,size*.05); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(size*.31,-size*.21); ctx.lineTo(size*.35,-size*.21); ctx.stroke();
+                ctx.strokeStyle="rgba(255,255,255,.55)"; ctx.lineWidth=Math.max(1,size*.018);
+                ctx.beginPath(); ctx.moveTo(size*.08,-size*.25); ctx.lineTo(size*.18,-size*.25); ctx.moveTo(size*.40,-size*.25); ctx.lineTo(size*.50,-size*.25); ctx.stroke();
+            }
+            else if(h==="cat_ears"){
+                ctx.fillStyle="#f49a9f"; ctx.strokeStyle="#7a3d4c"; ctx.lineWidth=Math.max(1.4,size*.035);
+                ctx.beginPath(); ctx.moveTo(-size*.40,-size*.34); ctx.lineTo(-size*.28,-size*.78); ctx.lineTo(-size*.02,-size*.48); ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(size*.02,-size*.48); ctx.lineTo(size*.28,-size*.78); ctx.lineTo(size*.40,-size*.34); ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.fillStyle="#ffd0d4"; ctx.beginPath(); ctx.moveTo(-size*.28,-size*.45); ctx.lineTo(-size*.25,-size*.66); ctx.lineTo(-size*.10,-size*.49); ctx.closePath(); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(size*.10,-size*.49); ctx.lineTo(size*.25,-size*.66); ctx.lineTo(size*.28,-size*.45); ctx.closePath(); ctx.fill();
+            }
+            ctx.restore();
+        }
+        function drawGround() {
+            let groundC, topC, stripeC;
+            if (batMode) {
+                groundC = "#171a31"; topC = "#ff6b81"; stripeC = "#30345d";
+            } else if (currentMap === "fire") {
+                groundC = "#2b0300"; topC = "#ff4500"; stripeC = "#5c0a00";
+            } else if (currentMap === "ice") {
+                groundC = "#10314b"; topC = "#a0e7e5"; stripeC = "#1d5f8a";
+            } else if (currentMap === "hell") {
+                groundC = "#090114"; topC = "#e6005c"; stripeC = "#2d0547";
+            } else {
+                groundC = stormFade > 0 ? "#746c67" : "#d9b879"; topC = stormFade > 0 ? "#497a61" : "#45d65c"; stripeC = stormFade > 0 ? "#5b534f" : "#a78045";
+            }
+            ctx.fillStyle = groundC; ctx.fillRect(0, H - GROUND, W, GROUND);
+            ctx.fillStyle = topC; ctx.fillRect(0, H - GROUND, W, 10);
+            ctx.fillStyle = stripeC; for (let x = -(groundOffset % 28); x < W; x += 28) { ctx.fillRect(x, H - GROUND + 20, 14, 5); ctx.fillRect(x + 12, H - GROUND + 34, 12, 4) }
+        }
+
+        function updateStorm() {
+            if (batMode) return;
+            stormFade += ((storm ? 1 : 0) - stormFade) * .025; if (!storm) return;
+
+            if (currentMap === "classic") {
+                for (const r of weatherParticles) { r.x -= r.drift; r.y += r.speed; if (r.y > H || r.x < -20) { r.x = Math.random() * W + 20; r.y = -10 - Math.random() * 80; r.speed = 5 + Math.random() * 5 } }
+                if (lightning > 0) lightning--; else { nextLightning--; if (nextLightning <= 0) { lightning = 3 + Math.floor(Math.random() * 4); nextLightning = 130 + Math.random() * 240; boltPoints = []; let x = 65 + Math.random() * 220, y = 0; boltPoints.push({ x, y }); for (let i = 0; i < 6; i++) { x += (Math.random() - .5) * 45; y += 25 + Math.random() * 22; boltPoints.push({ x, y }) } } }
+            } else if (currentMap === "fire") {
+                for (const wp of weatherParticles) { wp.x += wp.drift; wp.y -= wp.speed * .8; if (wp.y < -10) { wp.y = H + 10; wp.x = Math.random() * W } }
+                if (lightning > 0) lightning--; else { nextLightning--; if (nextLightning <= 0) { lightning = 1 + Math.floor(Math.random() * 2); nextLightning = 180 + Math.random() * 220; } }
+            } else if (currentMap === "ice") {
+                for (const wp of weatherParticles) {
+                    wp.x += wp.drift;
+                    wp.y += wp.speed;
+                    if (wp.y > H || wp.x < -10 || wp.x > W + 10) {
+                        wp.y = -10;
+                        wp.x = Math.random() * W;
+                    }
+                }
+            } else if (currentMap === "hell") {
+                for (const wp of weatherParticles) { wp.x += wp.drift; wp.y -= wp.speed * .6; if (wp.y < -10) { wp.y = H + 10; wp.x = Math.random() * W } }
+                if (lightning > 0) lightning--; else { nextLightning--; if (nextLightning <= 0) { lightning = 1 + Math.floor(Math.random() * 2); nextLightning = 200 + Math.random() * 250; } }
+            }
+        }
+
+        function drawStorm() {
+            if (batMode || !storm || stormFade < .05) return;
+            ctx.save();
+            if (currentMap === "classic") {
+                ctx.strokeStyle = `rgba(220,238,255,${.45 * stormFade})`; ctx.lineWidth = 1.2; ctx.beginPath(); for (const r of weatherParticles) { ctx.moveTo(r.x, r.y); ctx.lineTo(r.x - r.drift * 2, r.y + r.len) } ctx.stroke();
+                if (lightning > 0) { const flash = lightning > 2 ? .65 : .25; ctx.fillStyle = `rgba(230,242,255,${flash * stormFade})`; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = `rgba(255,255,255,${.95 * stormFade})`; ctx.lineWidth = 3; ctx.shadowColor = "#d8eeff"; ctx.shadowBlur = 18; ctx.beginPath(); boltPoints.forEach((point, i) => { if (i === 0) ctx.moveTo(point.x, point.y); else ctx.lineTo(point.x, point.y) }); ctx.stroke(); }
+            } else if (currentMap === "fire") {
+                for (const wp of weatherParticles) { ctx.fillStyle = wp.color; ctx.globalAlpha = wp.alpha * stormFade; ctx.beginPath(); ctx.arc(wp.x, wp.y, wp.size, 0, Math.PI * 2); ctx.fill(); }
+                if (lightning > 0) { ctx.fillStyle = `rgba(255,69,0,${.2 * stormFade})`; ctx.fillRect(0, 0, W, H); }
+            } else if (currentMap === "ice") {
+                for (const wp of weatherParticles) { ctx.fillStyle = wp.color; ctx.globalAlpha = wp.alpha * stormFade; ctx.beginPath(); ctx.arc(wp.x, wp.y, wp.size, 0, Math.PI * 2); ctx.fill(); }
+            } else if (currentMap === "hell") {
+                for (const wp of weatherParticles) { ctx.fillStyle = wp.color; ctx.globalAlpha = wp.alpha * stormFade; ctx.beginPath(); ctx.arc(wp.x, wp.y, wp.size, 0, Math.PI * 2); ctx.fill(); }
+                if (lightning > 0) { ctx.fillStyle = `rgba(186,85,211,${.2 * stormFade})`; ctx.fillRect(0, 0, W, H); }
+            }
+            ctx.restore();
+        }
+
+        function drawParticles() { for (const p of particles) { ctx.globalAlpha = Math.max(0, p.life / 24); ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill() } ctx.globalAlpha = 1 }
+        function drawOverlay(title, subtitle) { ctx.fillStyle = "rgba(24,24,50,.78)"; ctx.fillRect(25, 175, W - 50, 145); ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.strokeRect(25, 175, W - 50, 145); ctx.textAlign = "center"; ctx.fillStyle = "#ffe66d"; ctx.font = "bold 25px Arial"; ctx.fillText(title, W / 2, 218); ctx.fillStyle = "#fff"; ctx.font = "15px Arial"; ctx.fillText(subtitle, W / 2, 250); ctx.font = "13px Arial"; ctx.fillText("Chạm màn hình để tiếp tục", W / 2, 280) }
+
+        function collide() {
+            const size = (effects.tiny > 0 ? BIRD_SIZE * .6 : BIRD_SIZE) * birdDefs[selectedBird].scale, r = size * .36;
+            if (bird.y - r < 0 || bird.y + r > H - GROUND) return true;
+
+            if (!batMode && !portalEntryFreeze) {
+                for (const p of pipes) { if (bird.x + r > p.x - 7 && bird.x - r < p.x + PIPE_W + 7) { if (bird.y - r < p.top || bird.y + r > p.top + p.gap) return true } }
+            }
+
+            if (batMode) {
+                for (const b of bats) {
+                    if (Math.hypot(bird.x - b.x, bird.y - b.y) < r + b.size * 0.6) return true;
+                }
+            }
+
+            return false;
+        }
+
+        function endGame() {
+            if (state === "over") return; state = "over"; paused = false; $("pauseBtn").disabled = true; $("pauseBtn").textContent = "⏸";
+            playDieSound();
+            if (score > best) { best = score; try { localStorage.setItem("flappyBossBest", String(best)) } catch (e) { } $("best").textContent = best; $("menuBest").textContent = best }
+            $("start").textContent = "CHƠI LẠI";
+            $("onlineFinalScore").textContent = score; $("playerName").value = ""; $("onlineSaveStatus").textContent = ""; $("saveOnlineBtn").disabled = false; $("saveOnlineBtn").textContent = "🏆 LƯU ĐIỂM ONLINE"; $("gameOverModal").style.display = "flex";
+        }
+
+        function updateBuffs() { for (const key of Object.keys(effects)) { if (effects[key] > 0) effects[key]-- } updateBuffLabel() }
+
+        function update() {
+            frame++;
+            if (state === "playing") {
+                // Khi vừa vào màn dơi, cho chim một khoảng "bay tự do" 2.5s
+                // để người chơi kịp nhấn điều khiển; hết thời gian mới rơi bình thường.
+                // Sau khi thoát map phụ: 2.5 giây bay ổn định, vẫn điều khiển
+                // bằng Space/click bình thường. Hết 2.5 giây mới bật trọng lực lại.
+                if (postBatGraceTimer > 0) {
+                    postBatGraceTimer--;
+                    bird.vy *= 0.92;
+                    bird.y += bird.vy;
+                    bird.y = Math.max(45, Math.min(H - GROUND - 45, bird.y));
+                } else if (batMode && batIntroTimer > 0) {
+                    bird.y += bird.vy * 0.35;
+                    bird.vy *= 0.92;
+                    bird.y = Math.max(45, Math.min(H - GROUND - 45, bird.y));
+                } else {
+                    const hell = currentMap === "hell" ? getHellDifficulty() : null;
+                    bird.vy += hell ? hell.gravity : .32;
+                    bird.y += bird.vy;
+                }
+
+                let tierSpeed = 1.0;
+                if (score >= 50) tierSpeed = 1.35;
+                else if (score >= 30) tierSpeed = 1.15;
+
+                const hell = currentMap === "hell" ? getHellDifficulty() : null;
+                const baseSpeed = (2.1 + Math.min(score * .055, 1.5)) * tierSpeed * (hell ? hell.speedMult : 1);
+                const speed = effects.slow > 0 ? baseSpeed * .62 : baseSpeed;
+                // Trong 2.5 giây sau khi thoát map dơi: đóng băng toàn bộ map chính.
+                // Chim vẫn bay/điều khiển được, nhưng cột, nền và tiến độ không chạy.
+                if (postBatGraceTimer <= 0) groundOffset += speed;
+
+                if (portalCooldown > 0) portalCooldown--;
+
+                if (
+                    score >= nextPortalScore &&
+                    !portalSpawnedFor100 &&
+                    !batMode &&
+                    portalCooldown <= 0
+                ) {
+                    portalSpawnedFor100 = true;
+                    portalEntryFreeze = true;
+
+                    // ĐÃ CHẠM MỐC 30/60/90...: khóa toàn bộ cột ngay lập tức.
+                    // Trong portalEntryFreeze, cột không chạy và không thể cộng điểm.
+                    spawnPortal("enter");
+
+                    // Mốc tiếp theo luôn là mốc kế tiếp:
+                    // 30 -> 60 -> 90 -> 120...
+                    nextPortalScore += PORTAL_SCORE_INTERVAL;
+                }
+
+                if (portal) {
+                    portal.x -= speed;
+
+                    // HÚT VÀO CỔNG: khi cổng đến gần, chim bị kéo mạnh về tâm cổng
+                    // để người chơi không thể cố tình né qua cổng.
+                    const portalDx = portal.x - bird.x;
+                    const portalDy = portal.y - bird.y;
+                    const portalDistance = Math.hypot(portalDx, portalDy);
+                    const portalMagnetRange = 190;
+
+                    if (portal.type === "enter" && portalDistance < portalMagnetRange) {
+                        const pull = portalDistance < 80 ? 0.34 : 0.18;
+                        bird.y += portalDy * pull;
+                        bird.vy += portalDy * 0.055;
+
+                        // Ở sát cổng thì khóa thẳng vào tâm để không thể lách qua.
+                        if (portalDistance < portal.radius + 18) {
+                            bird.x = portal.x;
+                            bird.y = portal.y;
+                            bird.vy = 0;
+                        }
+                    }
+
+                    if (Math.hypot(bird.x - portal.x, bird.y - portal.y) < portal.radius + 10) {
+                        if (portal.type === "enter") {
+                            batMode = true;
+                            batIntroTimer = 150; // 2.5 giây cảnh báo, chưa cho dơi xuất hiện
+                            batTimer = BAT_MODE_DURATION;
+                            batSpawnTimer = 999999;
+                            bats = [];
+                            pipes = [];
+                            pickups = [];
+                            portal = null;
+                            portalEntryFreeze = false;
+
+                            // Khi xuyên qua cổng, đưa chim về đúng vị trí xuất phát
+                            // thay vì giữ vị trí giữa màn hình do lực hút cổng.
+                            bird.x = 85;
+                            bird.y = 230;
+                            bird.vy = 0;
+
+                            $("mode").textContent = "⚠️ CẢNH BÁO DƠI...";
+                            addFloatingText("🌀 CHUYỂN MAP: CẢNH BÁO DƠI!", W / 2, 140, "#bd68ff");
+                            playMilestoneSound();
+                        } else if (portal.type === "exit") {
+                            batMode = false;
+                            bats = [];
+                            achievementStats.batClears++;
+                            checkAchievements();
+                            portal = null;
+                            portalCooldown = 600;
+                            portalSpawnedFor100 = false;
+                            portalEntryFreeze = false;
+
+                            // Xóa cột cũ để sau khi thoát không có cột nào đâm vào chim.
+                            // Cột mới chỉ được tạo sau khi hết 2.5 giây.
+                            pipes = [];
+                            pickups = [];
+
+                            // 150 frames = 2.5 giây bay ổn định sau khi về map chính.
+                            postBatGraceTimer = 150;
+                            bird.vy = 0;
+                            bird.y = Math.max(90, Math.min(H - GROUND - 90, bird.y));
+
+                            $("mode").textContent = currentMap === "fire" ? "🔥 MAP LỬA" : currentMap === "ice" ? "❄️ MAP BĂNG" : currentMap === "hell" ? "👿 Địa Ngục" : "☀️ TRỜI NẮNG";
+                            addFloatingText("✨ THOÁT HIỂM THÀNH CÔNG!", W / 2, 140, "#55efc4");
+                            playMilestoneSound();
+                        }
+                    } else if (portal.x < -60) {
+                        portal = null;
+                    }
+                }
+
+                if (batMode) {
+                    // Giai đoạn cảnh báo: 2.5 giây, chưa có dơi để người chơi kịp chuẩn bị.
+                    if (batIntroTimer > 0) {
+                        batIntroTimer--;
+                        bats = [];
+                        batSpawnTimer = 999999;
+                        if (batIntroTimer === 0) {
+                            $("mode").textContent = "🦇 ĐẤU TRƯỜNG DƠI (15S)";
+                            batSpawnTimer = 0;
+                            addFloatingText("🦇 DƠI XUẤT HIỆN!", W / 2, 140, "#ff4757");
+                            playMilestoneSound();
+                        }
+                    } else {
+                        batTimer--;
+                        batSpawnTimer--;
+                        if (batSpawnTimer <= 0) {
+                            spawnBat();
+                            batSpawnTimer = 30 + Math.floor(Math.random() * 25);
+                        }
+                    }
+
+                    for (const b of bats) {
+                        b.x -= b.speed;
+                    }
+                    bats = bats.filter(b => b.x > -40);
+
+                    if (batIntroTimer <= 0 && batTimer <= 0 && !portal) {
+                        spawnPortal("exit");
+                    }
+                } else {
+                    // Hết 2.5 giây mới cho cột chạy tiếp, giống cơ chế đứng yên của map dơi.
+                    if (postBatGraceTimer <= 0) {
+                        const hellNow = currentMap === "hell" ? getHellDifficulty() : null;
+                        const spawnGap = hellNow ? hellNow.spawnGap : 275;
+                        if (!portalEntryFreeze && (pipes.length === 0 || pipes[pipes.length - 1].x < W - spawnGap)) addPipe();
+                    }
+                    for (const p of pipes) {
+                        if (postBatGraceTimer > 0 || portalEntryFreeze) continue;
+                        p.x -= speed;
+                        if (p.moving) {
+                            const hellNow = currentMap === "hell" ? getHellDifficulty() : null;
+                            let oscMultiplier = hellNow ? hellNow.frequencyMult : (score >= 50 ? 1.6 : 1.0);
+                            p.phase += p.frequency * oscMultiplier;
+                            let currentAmplitude = hellNow ? p.amplitude : (score >= 50 ? p.amplitude * 1.35 : p.amplitude);
+                            p.top = p.baseTop + Math.sin(p.phase) * currentAmplitude;
+                            p.top = Math.max(35, Math.min(H - GROUND - p.gap - 35, p.top));
+                        }
+                        // Chỉ tính điểm khi map chính đang chạy bình thường.
+                        // Không tính điểm trong lúc vào map dơi, đang ở map dơi,
+                        // hoặc đang nghỉ 2.5 giây sau khi thoát map dơi.
+                        if (!portalEntryFreeze && !batMode && postBatGraceTimer <= 0 &&
+                            !p.passed && p.x + PIPE_W < bird.x) {
+                            p.passed = true;
+                            score++;
+                            $("score").textContent = score;
+                            if(currentMap === "hell"){ achievementStats.hellBest=Math.max(achievementStats.hellBest,score); checkAchievements(); }
+                            if(currentMap === "ice"){ achievementStats.iceColumns++; checkAchievements(); }
+
+                            if (currentMap === "hell" && (score === 10 || score === 50)) {
+                                const label = score === 10 ? "🔥 ĐỊA NGỤC CẤP 2 — CỘT 10!" : "☠️ ĐỊA NGỤC CẤP 3 — CỘT 50!";
+                                addFloatingText(label, W / 2, 140, "#ff355e");
+                                playMilestoneSound();
+                                $("mode").textContent = score === 10 ? "👿 ĐỊA NGỤC CẤP 2" : "☠️ ĐỊA NGỤC CẤP 3";
+                            } else if (score > 0 && score % 10 === 0) {
+                                playMilestoneSound();
+                                addFloatingText(`🔥 GREAT! (${score} ĐIỂM) 🔥`, W / 2, 140, "#55efc4");
+                            } else {
+                                playScoreSound();
+                            }
+                        }
+                    }
+                    pipes = pipes.filter(p => p.x > -PIPE_W - 20);
+                }
+
+                pickups = pickups.filter(p => p.pipeRef && p.pipeRef.x > -PIPE_W - 30 && !p.collected);
+                if (postBatGraceTimer <= 0) {
+                    pickupTimer--; if (pickupTimer <= 0) { spawnPickup(); pickupTimer = 210 + Math.random() * 180 }
+                }
+                for (const p of pickups) {
+                    if (!p.pipeRef) continue; p.x = p.pipeRef.x + PIPE_W / 2; p.y = p.pipeRef.top + p.pipeRef.gap / 2; p.age++;
+                    if (effects.magnet > 0) { const dx = bird.x - p.x, dy = bird.y - p.y, dist = Math.hypot(dx, dy); if (dist < 145 && dist > 0) { p.x += dx / dist * 3.5; p.y += dy / dist * 3.5 } }
+                    const size = (effects.tiny > 0 ? BIRD_SIZE * .6 : BIRD_SIZE) * birdDefs[selectedBird].scale;
+                    if (Math.hypot(p.x - bird.x, p.y - bird.y) < size * .65 + 13) { collectPickup(p); p.collected = true }
+                }
+                pickups = pickups.filter(p => !p.collected && p.pipeRef && p.pipeRef.x > -PIPE_W - 30);
+
+                for (const ft of floatingTexts) {
+                    ft.y += ft.vy;
+                    ft.alpha -= 0.02;
+                }
+                floatingTexts = floatingTexts.filter(ft => ft.alpha > 0);
+
+                for (const f of feathers) {
+                    f.x += f.vx - (speed * 0.5);
+                    f.y += f.vy;
+                    f.angle += f.spin;
+                    f.life--;
+                }
+                feathers = feathers.filter(f => f.life > 0);
+
+                for (const p of particles) { p.x += p.vx; p.y += p.vy; p.life-- } particles = particles.filter(p => p.life > 0);
+                updateBuffs(); updateStorm();
+                if (effects.invincible <= 0 && collide()) endGame();
+                else if (effects.invincible > 0 && bird.y + BIRD_SIZE * .3 > H - GROUND) { bird.y = H - GROUND - BIRD_SIZE * .3; bird.vy = Math.min(0, bird.vy) }
+            } else updateStorm();
+        }
+
+        function draw() {
+            drawBackground();
+            if (!batMode && !portalEntryFreeze) {
+                for (const p of pipes) drawPipe(p);
+                drawCompassGuide();
+                drawPickups();
+            }
+            drawPortal();
+            drawBats();
+            drawGround();
+            drawStorm();
+            drawParticles();
+            drawFeathers();
+            drawBird();
+            drawSelectedTitle();
+            drawBatWarning();
+            drawBossBar();
+            drawFloatingTexts();
+            if (state === "ready") drawOverlay("FLAPPY BIRD", "Sẵn sàng né cột chưa?");
+            else if (state === "paused") drawOverlay("⏸ ĐÃ TẠM DỪNG", "Bấm ▶ TIẾP TỤC để chơi tiếp");
+            else if (state === "over") drawOverlay("TOANG RỒI!", "Điểm của mày: " + score)
+        }
+
+        let lastTime = 0, accumulator = 0; const STEP = 1000 / 60;
+        function loop(timestamp) { if (!lastTime) lastTime = timestamp; let delta = timestamp - lastTime; lastTime = timestamp; delta = Math.min(delta, 100); accumulator += delta; while (accumulator >= STEP) { update(); accumulator -= STEP } draw(); requestAnimationFrame(loop) }
+        reset(); requestAnimationFrame(loop);
+    </script>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script>
+        "use strict";
+        const firebaseConfig = {
+            apiKey: "AIzaSyCq4iJEMxa2_wZWVz2IhCJ78bT0olOIiUk",
+            authDomain: "birdonline-c3241.firebaseapp.com",
+            projectId: "birdonline-c3241",
+            storageBucket: "birdonline-c3241.firebasestorage.app",
+            messagingSenderId: "227161459366",
+            appId: "1:227161459366:web:be0c02ee6a116b60b30267"
+        };
+        const list = document.getElementById("leaderboardList");
+        const modal = document.getElementById("gameOverModal");
+        const nameInput = document.getElementById("playerName");
+        const saveBtn = document.getElementById("saveOnlineBtn");
+        const skipBtn = document.getElementById("skipOnlineBtn");
+        const status = document.getElementById("onlineSaveStatus");
+        let db = null;
+        try {
+            if (!window.firebase) throw new Error("Không tải được thư viện Firebase.");
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+        } catch (error) {
+            console.log("Firebase init:", error);
+            if (list) list.innerHTML = '<div class="lb-message">Không kết nối được Firebase.</div>';
+        }
+        async function loadLeaderboard() {
+            if (!list) return;
+            list.innerHTML = '<div class="lb-message">Đang tải bảng xếp hạng...</div>';
+            if (!db) { list.innerHTML = '<div class="lb-message">Firebase chưa kết nối được.</div>'; return; }
+            try {
+                const snapshot = await db.collection("scores").orderBy("score", "desc").limit(10).get();
+                if (snapshot.empty) { list.innerHTML = '<div class="lb-message">Chưa có điểm nào. Hãy là người đầu tiên!</div>'; return; }
+                list.innerHTML = ""; let rank = 1;
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data(), row = document.createElement("div"), player = document.createElement("span"), points = document.createElement("span");
+                    const rankIcon = rank === 1 ? "💎 " : rank === 2 ? "🥇 " : rank === 3 ? "🥈 " : rank === 4 ? "🥉 " : "";
+                    row.className = "lb-item";
+                    player.className = "lb-rank";
+                    player.textContent = rankIcon + rank + ". " + String(data.name || "Người chơi").slice(0, 20);
+                    points.className = "lb-score";
+                    points.textContent = (Number(data.score) || 0) + " điểm";
+                    row.append(player, points);
+                    list.appendChild(row);
+                    rank++;
+                });
+            } catch (error) {
+                console.log("Load leaderboard:", error);
+                list.innerHTML = '<div class="lb-message">Không tải được BXH.</div>';
+            }
+        }
+        async function saveScore(name, scoreValue) {
+            if (!db) throw new Error("Firebase chưa khởi tạo");
+            await db.collection("scores").add({ name: name, score: Number(scoreValue), timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+            await loadLeaderboard();
+        }
+        saveBtn.addEventListener("click", async () => {
+            const name = nameInput.value.trim(), finalScore = Number(document.getElementById("onlineFinalScore").textContent);
+            if (!name) { status.textContent = "Nhập tên trước khi lưu điểm nhé!"; nameInput.focus(); return; }
+            saveBtn.disabled = true; saveBtn.textContent = "ĐANG LƯU..."; status.textContent = "Đang gửi điểm lên bảng xếp hạng...";
+            try {
+                await saveScore(name.slice(0, 20), finalScore);
+                status.textContent = "✅ Lưu điểm online thành công!";
+                saveBtn.textContent = "ĐÃ LƯU ✓";
+                setTimeout(() => { modal.style.display = "none"; }, 900);
+            } catch (error) {
+                console.error("Save score:", error);
+                status.textContent = "❌ Lưu thất bại: " + (error.code || error.message || "lỗi không rõ");
+                saveBtn.disabled = false; saveBtn.textContent = "THỬ LƯU LẠI";
+            }
+        });
+        skipBtn.addEventListener("click", () => { modal.style.display = "none"; });
+        loadLeaderboard();
+    </script>
+</body>
+</html>
